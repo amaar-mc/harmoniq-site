@@ -96,7 +96,7 @@ function Problem() {
           <span className="text-[color:var(--sage)]">57 million</span> people are losing their memories.
         </h2>
         <p className="mt-8 text-lg md:text-xl text-white/75 max-w-3xl mx-auto leading-relaxed">
-          Traditional music therapy costs <b className="text-white">$80&ndash;$150 per session</b>, and reaches fewer than 2% of dementia patients. Families turn to generic playlists that don&rsquo;t adapt, don&rsquo;t track progress, and don&rsquo;t understand the person behind the diagnosis.
+          Traditional music therapy costs <b className="text-white">$300+ per session</b>, and reaches fewer than 2% of dementia patients. Families turn to generic playlists that don&rsquo;t adapt, don&rsquo;t track progress, and don&rsquo;t understand the person behind the diagnosis.
         </p>
         <p className="mt-6 text-lg md:text-xl text-white/90 italic font-display">
           &ldquo;I saw my daughter&rsquo;s face, felt warmth in my heart, but could not remember her name.&rdquo;
