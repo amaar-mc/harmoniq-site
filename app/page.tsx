@@ -22,7 +22,6 @@ function Nav() {
           <a href="#features" className="hover:text-[color:var(--navy)]">Features</a>
           <a href="#compare" className="hover:text-[color:var(--navy)]">Why Harmoniq</a>
           <a href="#pricing" className="hover:text-[color:var(--navy)]">Pricing</a>
-          <a href="#team" className="hover:text-[color:var(--navy)]">Team</a>
         </nav>
         <a href="#cta" className="btn-primary text-sm !py-2.5 !px-5">Get early access</a>
       </div>
@@ -182,7 +181,7 @@ function Features() {
               "Hands-free voice guidance designed for seniors",
               "One setup, a lifetime of personalization",
             ]}
-            img={screen("4843")}
+            img={screen("4849")}
           />
 
           <FeatureRow
@@ -235,9 +234,13 @@ function Features() {
 function Screens() {
   const list = ["4844", "4842", "4847", "4848", "4841", "4839"];
   return (
-    <section className="py-20 bg-[color:var(--bg-alt)] overflow-hidden">
+    <section className="py-24 md:py-28 bg-[color:var(--bg-alt)] overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="max-w-2xl">
+          <span className="section-label">A closer look</span>
+          <h2 className="mt-3 font-display text-[clamp(32px,4.5vw,52px)] leading-[1.02] text-[color:var(--navy-deep)] tracking-tight">Every screen, designed for calm focus.</h2>
+        </div>
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {list.map((n) => (
             <div key={n} className="phone-frame !p-[6px] !rounded-[28px]">
               <img src={screen(n)} alt="" className="!rounded-[22px]" />
@@ -310,7 +313,7 @@ function Testimonials() {
           <span className="section-label">In their words</span>
           <h2 className="mt-3 font-display text-[clamp(36px,5vw,60px)] leading-[1.02] text-[color:var(--navy-deep)] tracking-tight">Reconnection, in real time.</h2>
         </div>
-        <div className="mt-14 grid md:grid-cols-2 gap-6">
+        <div className="mt-14 grid md:grid-cols-2 gap-6 items-stretch">
           <Quote
             body="My mom lives at Sunrise Senior Living, and over the past year her dementia has made it harder for her to stay engaged during visits. When we started using this music app together, something shifted. The personalized songs immediately caught her attention, she started smiling, tapping her hand, and even sang parts of a song she used to play in the car when I was a kid. For those few minutes, it felt like I had my mom back. It&rsquo;s become a meaningful part of our visits and helps us connect without frustration or confusion."
             name="Daughter of Patient (Aged 77)"
@@ -329,10 +332,10 @@ function Testimonials() {
 
 function Quote({ body, name, role }: { body: string; name: string; role: string }) {
   return (
-    <figure className="card-soft p-8 md:p-10 relative">
-      <div className="absolute -top-4 left-8 text-6xl font-display text-[color:var(--sage)] leading-none select-none">&ldquo;</div>
-      <blockquote className="text-[color:var(--navy)]/85 leading-relaxed text-[17px]">{body}</blockquote>
-      <figcaption className="mt-6 pt-6 border-t border-[color:var(--border)]">
+    <figure className="card-soft p-8 md:p-10 pt-12 md:pt-14 relative h-full flex flex-col">
+      <div className="absolute top-6 left-8 md:top-7 md:left-10 text-7xl font-display text-[color:var(--sage)] leading-none select-none pointer-events-none">&ldquo;</div>
+      <blockquote className="text-[color:var(--navy)]/85 leading-relaxed text-[17px] flex-1">{body}</blockquote>
+      <figcaption className="mt-8 pt-6 border-t border-[color:var(--border)]">
         <div className="font-semibold text-[color:var(--navy-deep)]">{name}</div>
         <div className="text-sm text-[color:var(--muted)]">{role}</div>
       </figcaption>
@@ -457,38 +460,6 @@ function InfoCard({ k, v }: { k: string; v: string }) {
   );
 }
 
-function Team() {
-  const members = [
-    { n: "Kashish Kapoor", r: "University of Cambridge · Vision & Robotics Lab" },
-    { n: "Amaar Chughtai", r: "Princeton · MedARC" },
-    { n: "Aidan Kwon", r: "Stanford Medicine" },
-    { n: "Chloe Ding", r: "TOY Project · Thinking of You" },
-  ];
-  return (
-    <section id="team" className="py-28 md:py-36 bg-[color:var(--navy-deep)] text-white relative overflow-hidden">
-      <div className="absolute inset-0 dark-gradient opacity-90" aria-hidden />
-      <div className="relative max-w-6xl mx-auto px-6">
-        <div className="max-w-2xl">
-          <span className="section-label !text-[color:var(--sage)]">The team</span>
-          <h2 className="mt-3 font-display text-[clamp(36px,5vw,60px)] leading-[1.02] tracking-tight">Neuroscience, senior-care, and engineering — in one room.</h2>
-          <p className="mt-5 text-white/70 text-lg">Students with research backgrounds across Princeton, Stanford, Cambridge, and MIT — and direct, hands-on access to memory-care residents and caregivers.</p>
-        </div>
-        <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {members.map((m) => (
-            <div key={m.n} className="rounded-2xl p-6 bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
-              <div className="w-12 h-12 rounded-full bg-[color:var(--sage)] grid place-items-center font-display text-[color:var(--navy-deep)] text-xl">
-                {m.n.split(" ").map((p) => p[0]).join("")}
-              </div>
-              <div className="mt-5 font-display text-xl">{m.n}</div>
-              <div className="text-sm text-white/65 mt-1.5 leading-snug">{m.r}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function CTA() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
@@ -580,7 +551,6 @@ export default function Page() {
         <Testimonials />
         <Market />
         <Pricing />
-        <Team />
         <CTA />
       </main>
       <Footer />
