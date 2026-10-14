@@ -73,8 +73,9 @@ export function createHeadLines(): HeadLines {
     [14, -128],
     [12, -140],
   ];
+  // Lower face scaled to adult proportions about the nasion (y = -25).
   const profile = smooth(
-    profilePts.map(([z, y]) => v(0, y, z)),
+    profilePts.map(([z, y]) => v(0, y < -25 && z > 0 ? -25 + (y + 25) * 1.2 : y, z)),
     260,
   );
 
@@ -155,12 +156,15 @@ export function createHeadLines(): HeadLines {
     [-38.5, -52.5],
     [-33.5, -58],
   ];
+  // The auricle stands off the skull toward its back rim and sits a little
+  // further back (tragus ≈ 29 mm behind the temple line).
+  const earShift = -6;
   const earL = smooth(
-    earOuter.map(([z, y]) => v(earX + (z + 22) * -0.05, y, z)),
+    earOuter.map(([z, y]) => v(earX + Math.max(0, -(z + 22)) * 0.4, y, z + earShift)),
     120,
   );
   const earInnerL = smooth(
-    earInner.map(([z, y]) => v(earX + 0.6, y, z)),
+    earInner.map(([z, y]) => v(earX + 2 + Math.max(0, -(z + 22)) * 0.3, y, z + earShift)),
     60,
   );
   const mirror = (pts: THREE.Vector3[]) => pts.map((p) => v(-p.x, p.y, p.z));

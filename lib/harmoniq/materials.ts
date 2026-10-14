@@ -34,6 +34,7 @@ export interface HarmoniqMaterials {
   bezel: THREE.MeshPhysicalMaterial;
   light: THREE.MeshBasicMaterial;
   glow: THREE.ShaderMaterial;
+  contactGlow: THREE.ShaderMaterial;
   dispose(): void;
 }
 
@@ -85,87 +86,146 @@ export function createGlowMaterial() {
   });
 }
 
+/**
+ * Light spill from the contacts onto the liner when they "warm up". All five
+ * halos share one mesh: per-vertex index → uGlow[i]; the explode offset is
+ * applied in the vertex shader so the halos travel with their pads.
+ */
+export function createContactGlowMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uGlow: { value: [0, 0, 0, 0, 0] },
+      uExplode: { value: 0 },
+      uColor: { value: new THREE.Color('#ffc890') },
+    },
+    vertexShader: /* glsl */ `
+      attribute vec2 aLocal;
+      attribute vec2 aHalf;
+      attribute float aIndex;
+      attribute vec3 aDir;
+      uniform float uExplode;
+      uniform float uGlow[5];
+      varying vec2 vLocal;
+      varying vec2 vHalf;
+      varying float vGlow;
+      void main() {
+        vLocal = aLocal;
+        vHalf = aHalf;
+        int i = int(aIndex + 0.5);
+        float g = 0.0;
+        for (int k = 0; k < 5; k++) if (k == i) g = uGlow[k];
+        vGlow = g;
+        vec3 p = position + aDir * uExplode;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      varying vec2 vLocal;
+      varying vec2 vHalf;
+      varying float vGlow;
+      uniform vec3 uColor;
+      void main() {
+        if (vGlow <= 0.001) discard;
+        vec2 p = vLocal;
+        p.x = max(abs(p.x) - (vHalf.x - vHalf.y), 0.0);
+        float d = max(length(p) - vHalf.y, 0.0);
+        float a = (exp(-d * d / 10.0) * 0.55 + exp(-d * d / 40.0) * 0.15) * vGlow;
+        gl_FragColor = vec4(uColor * a, a);
+        #include <colorspace_fragment>
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+  });
+}
+
 export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
   const brushed = createBrushedTextures();
-  // Brush streaks: one tile spans ~60 mm along the band and ~90 mm across,
-  // so each texel row is ~0.18 mm — visible as fine lines at hero scale.
-  brushed.roughness.repeat.set(0.17, 0.11);
-  brushed.normal.repeat.set(0.17, 0.11);
+  // Brush hairlines: one tile spans ~60 mm along the band and ~50 mm across
+  // (rows ≈ 0.1 mm). Anisotropy carries the brushed read; this is fine grain.
+  brushed.roughness.repeat.set(0.17, 0.2);
+  brushed.normal.repeat.set(0.17, 0.2);
   const knit = createKnitTextures();
-  knit.normal.repeat.set(1.25, 1.25);
-  knit.color.repeat.set(1.25, 1.25);
+  knit.normal.repeat.set(1.6, 1.6);
+  knit.color.repeat.set(1.6, 1.6);
   const foam = createFoamNormalTexture();
-  foam.repeat.set(2.2, 2.2);
+  foam.repeat.set(0.9, 0.9);
   const grain = createGrainNormalTexture();
   grain.repeat.set(2, 2);
 
   const titanium = new THREE.MeshPhysicalMaterial({
     name: 'titanium',
-    color: '#b4b3b0',
+    color: '#b6b4b0',
     metalness: 1,
-    roughness: 0.36,
+    roughness: 0.27,
     roughnessMap: brushed.roughness,
     normalMap: brushed.normal,
-    normalScale: new THREE.Vector2(0.12, 0.12),
-    anisotropy: 0.5,
+    normalScale: new THREE.Vector2(0.05, 0.05),
+    anisotropy: 0.55,
     anisotropyRotation: 0,
     envMapIntensity: 1,
   });
 
+  // Laser-etched titanium: a dark, matte oxide, far less metallic than the
+  // brushed surface around it.
   const etch = new THREE.MeshPhysicalMaterial({
     name: 'etch',
-    color: PALETTE.titaniumEtch,
-    metalness: 0.85,
-    roughness: 0.62,
-    alphaTest: 0.5,
+    color: '#4f4c48',
+    metalness: 0.15,
+    roughness: 0.85,
+    envMapIntensity: 0.4,
+    transparent: true,
+    depthWrite: false,
     polygonOffset: true,
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
   });
-  etch.alphaToCoverage = true;
 
   const textile = new THREE.MeshPhysicalMaterial({
     name: 'textile',
-    color: '#7e7d7b',
+    color: '#857f7a',
     map: knit.color,
     roughness: 0.95,
     metalness: 0,
-    sheen: 0.55,
-    sheenColor: new THREE.Color('#bdbab5'),
-    sheenRoughness: 0.55,
+    sheen: 1,
+    sheenColor: new THREE.Color(PALETTE.textileSheen),
+    sheenRoughness: 0.35,
     normalMap: knit.normal,
-    normalScale: new THREE.Vector2(0.85, 0.85),
+    normalScale: new THREE.Vector2(1, 1),
   });
 
   const liner = new THREE.MeshPhysicalMaterial({
     name: 'liner',
-    color: '#4a4a4f',
-    roughness: 0.5,
+    color: '#403f3d',
+    roughness: 0.62,
     metalness: 0,
     normalMap: grain,
     normalScale: new THREE.Vector2(0.12, 0.12),
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.42,
+    sheen: 0.35,
+    sheenColor: new THREE.Color('#5d5a57'),
+    sheenRoughness: 0.6,
   });
 
   const earRest = new THREE.MeshPhysicalMaterial({
     name: 'earRest',
-    color: '#45454a',
-    roughness: 0.55,
+    color: '#3b3a3a',
+    roughness: 0.72,
     metalness: 0,
     normalMap: grain,
     normalScale: new THREE.Vector2(0.1, 0.1),
-    sheen: 0.25,
+    sheen: 0.5,
     sheenColor: new THREE.Color('#77757a'),
     sheenRoughness: 0.6,
   });
 
   const contactBase = new THREE.MeshPhysicalMaterial({
     name: 'contact',
-    color: '#d4c6b2',
+    color: '#dccbb4',
     metalness: 1,
-    roughness: 0.27,
-    emissive: new THREE.Color(PALETTE.champagne),
+    roughness: 0.33,
+    emissive: new THREE.Color('#ffcc94'),
     emissiveIntensity: 0,
   });
   const contacts = Array.from({ length: 5 }, (_, i) => {
@@ -177,28 +237,34 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
 
   const gasket = new THREE.MeshPhysicalMaterial({
     name: 'gasket',
-    color: '#222224',
-    roughness: 0.95,
+    color: '#2e2c2a',
+    roughness: 1,
     metalness: 0,
     normalMap: foam,
-    normalScale: new THREE.Vector2(0.6, 0.6),
+    normalScale: new THREE.Vector2(1.2, 1.2),
+    sheen: 0.6,
+    sheenColor: new THREE.Color('#6e6a65'),
+    sheenRoughness: 0.9,
   });
 
   const glass =
     quality === 'high'
       ? new THREE.MeshPhysicalMaterial({
           name: 'glass',
-          color: '#7d8087',
+          color: '#ffffff',
           metalness: 0,
-          roughness: 0.06,
+          roughness: 0.04,
           transmission: 0.95,
-          thickness: 4,
+          // thickness is in model units (mm × worldScale) while attenuationDistance
+          // is in world units: 8 mm of glass, ~7 mm to fall to the smoke colour.
+          thickness: 8,
           ior: 1.5,
-          attenuationColor: new THREE.Color('#4b4d54'),
-          attenuationDistance: 10,
+          attenuationColor: new THREE.Color('#9a9690'),
+          attenuationDistance: 0.07,
           clearcoat: 1,
           clearcoatRoughness: 0.05,
           specularIntensity: 1,
+          envMapIntensity: 1.2,
         })
       : new THREE.MeshPhysicalMaterial({
           name: 'glass',
@@ -212,17 +278,17 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
 
   const glassCore = new THREE.MeshPhysicalMaterial({
     name: 'glassCore',
-    color: '#3b3c41',
-    roughness: 0.55,
-    metalness: 0.15,
+    color: '#5a5b5f',
+    roughness: 0.35,
+    metalness: 0.5,
     clearcoat: 0.2,
   });
 
   const bezel = new THREE.MeshPhysicalMaterial({
     name: 'bezel',
-    color: '#4a4a4c',
+    color: '#58585b',
     roughness: 0.35,
-    metalness: 0.8,
+    metalness: 0.6,
   });
 
   const light = new THREE.MeshBasicMaterial({
@@ -232,6 +298,7 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
   });
 
   const glow = createGlowMaterial();
+  const contactGlow = createContactGlowMaterial();
 
   const textures = [brushed.roughness, brushed.normal, knit.normal, knit.color, foam, grain];
   return {
@@ -247,10 +314,11 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
     bezel,
     light,
     glow,
+    contactGlow,
     dispose() {
       textures.forEach((t) => t.dispose());
       etch.alphaMap?.dispose();
-      [titanium, etch, textile, liner, earRest, gasket, glass, glassCore, bezel, light, glow, ...contacts].forEach((m) =>
+      [titanium, etch, textile, liner, earRest, gasket, glass, glassCore, bezel, light, glow, contactGlow, ...contacts].forEach((m) =>
         m.dispose(),
       );
     },

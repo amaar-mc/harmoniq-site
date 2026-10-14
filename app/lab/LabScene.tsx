@@ -99,6 +99,17 @@ function Rig({ preset, instant }: { preset: CameraPreset; instant: boolean }) {
   return <CameraControls ref={ref} makeDefault minDistance={0.3} maxDistance={12} smoothTime={0.35} />;
 }
 
+/** Opaque clear in the backdrop colour: glass transmission samples the real backdrop. */
+function ClearColor({ color }: { color: string }) {
+  const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    gl.setClearColor(color, 1);
+    invalidate();
+  }, [gl, color, invalidate]);
+  return null;
+}
+
 function Kicker() {
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
@@ -215,6 +226,7 @@ export default function LabScene() {
           gl.setClearColor(0x000000, 0);
         }}
       >
+        <ClearColor color={BACKDROPS[backdrop]} />
         <StudioEnvironment mood={dark ? 'dark' : 'light'} />
         <StudioLights mood={dark ? 'dark' : 'light'} />
         {model && (

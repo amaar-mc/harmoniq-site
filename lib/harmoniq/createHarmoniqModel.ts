@@ -11,6 +11,7 @@ import {
   ringSweep,
   rmfFrames,
   roundedLoop,
+  roundedRectLathe,
   softExtrude,
   stadiumLathe,
   stadiumParam,
@@ -19,6 +20,7 @@ import {
 } from './geometry/primitives';
 import { createMaterials, type HarmoniqMaterials, type Quality } from './materials';
 import { createWordmarkTexture } from './textures';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { bakeVertexAO, patchAO } from './bakeAO';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -75,7 +77,8 @@ function junctionOf(cfg: HarmoniqConfig, band: Band): Junction {
     top,
     bottom,
     yCentre: (top + bottom) / 2,
-    armH: bottom - 0.2,
+    // Glass sits on the titanium with one parting gap.
+    armH: bottom - cfg.partingGap,
     sDip0: band.sAtZ(cfg.junction.dipStartZ),
     sDip1: band.sAtZ(cfg.junction.dipEndZ),
     sHaloEnd: band.sAtZ(frontZ - cfg.junction.haloEndInset),
@@ -99,25 +102,28 @@ function shellProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): 
   // Once the liner and crown have ended inside the glass, the shell slims to
   // the arm's section so the titanium reads as one sweep from brow to ear
   // (the arm continues inside the tail).
+  // Outer surface (radii, bow) eases over the whole dip so the visible face
+  // never bands; the hidden inner structure slims only once the liner ends.
+  const mOut = smoothstep(j.sDip0, j.sDip1 + 4, Math.abs(s));
   const m = smoothstep(j.sHaloEnd - 2, j.sHaloEnd + 6, Math.abs(s));
   // Tail section = the arm's section + 0.05 mm all round, so the arm (which
   // starts inside the tail) continues it with an invisible step.
-  const tailT = cfg.arm.thickness + 0.1;
-  const tailR = cfg.arm.edgeRadius + 0.05;
+  const tailT = cfg.arm.thickness + 0.04;
+  const tailR = cfg.arm.edgeRadius + 0.02;
   const tailInner = T - tailT;
   const lipFace = lerp(sh.lipFace, tailInner, m);
   const back = lerp(cfg.liner.back, tailInner + 0.02, m);
   const lipH = lerp(sh.lipHeight, 1.2, m);
   const corners: Corner[] = [
     { p: lipFace, q: 0, r: lerp(sh.bottomInnerRadius, tailR, m), segs: 5 },
-    { p: T, q: 0, r: lerp(sh.bottomOuterRadius, tailR, m), segs: 9 },
-    { p: T, q: ht, r: lerp(sh.topEdgeRadius, tailR, m), segs: 5 },
+    { p: T, q: 0, r: lerp(sh.bottomOuterRadius, tailR, mOut), segs: 9 },
+    { p: T, q: ht, r: lerp(sh.topEdgeRadius, tailR, mOut), segs: 5 },
     { p: back, q: ht, r: lerp(0, tailR, m), segs: 4 },
     { p: back, q: lipH, r: 0 },
     { p: lipFace, q: lipH, r: lerp(0.55, 0.01, m), segs: 4 },
   ];
   const pts = roundedLoop(corners, [5, 14, 3, 3, 2, 2]);
-  const bowNow = bow * (1 - smoothstep(j.sDip0, j.sDip1, Math.abs(s)));
+  const bowNow = bow * (1 - mOut);
   return pts.map(([p, q]) => {
     const w = smoothstep(T - sh.bottomOuterRadius, T, p);
     return [p + bowNow * Math.sin(Math.PI * clamp01(q / ht)) * w, q] as V2;
@@ -127,7 +133,9 @@ function shellProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): 
 function linerProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): V2[] {
   const { face, back } = cfg.liner;
   const q0 = cfg.shell.lipHeight + cfg.partingGap;
-  const top = Math.max(q0 + 2, effTitanium(band, j, s) - 0.6);
+  // Ends in a rounded tongue rather than a block cap.
+  const e = smoothstep(j.sHaloEnd - 8, j.sHaloEnd, Math.abs(s));
+  const top = lerp(Math.max(q0 + 2, effTitanium(band, j, s) - 0.6), q0 + 2.2, e);
   const corners: Corner[] = [
     { p: face, q: q0, r: 1.1, segs: 4 },
     { p: back - 0.05, q: q0, r: 0 },
@@ -141,7 +149,10 @@ const CROWN_POINTS = 44;
 
 function crownProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): V2[] {
   const T = cfg.halo.thickness;
+  // Outer skirt follows the dipped titanium; the forehead side keeps the
+  // undipped section so the roll never folds back on itself.
   const ht = effTitanium(band, j, s);
+  const ht0 = band.titaniumHeight(s);
   const H = band.height(s);
   const rise = H - ht;
   const qcb = Math.min(band.cushionBottom(s), ht - 1.6);
@@ -150,18 +161,19 @@ function crownProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): 
   const pOut = T - cfg.shell.ledge - cfg.partingGap;
   const pIn = face - cfg.crown.overhang;
   const bulge = cfg.crown.outerBulge;
+  const qInnerTop = Math.min(H - 2.4, Math.max(ht0 - 1.0, qcb + 3.6));
   const ctrl: V2[] = [
     [pOut, ht + 0.12],
     [pOut + bulge, ht + rise * 0.42],
     [pOut - 1.5, H - 0.55],
     [(pOut + pIn) / 2 + 0.9, H],
     [pIn + 2.1, H - 1.05],
-    [pIn, ht - 1.0],
+    [pIn, qInnerTop],
     [pIn + 0.3, qcb + 3.0],
     [pIn + 1.35, qcb + 0.55],
     [face + 0.35, qcb + 0.12],
     [face + 1.3, qcb + 1.2],
-    [back - 0.4, ht - 1.2],
+    [back - 0.4, Math.max(qcb + 1.8, ht - 1.2)],
     [pOut - 2.0, ht - 0.35],
   ];
   const curve = new THREE.CatmullRomCurve3(
@@ -170,15 +182,12 @@ function crownProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): 
     'centripetal',
   );
   const pts = curve.getSpacedPoints(CROWN_POINTS).slice(0, CROWN_POINTS);
-  // Inside the glass the cushion end tucks in behind the module's chassis.
-  const end = smoothstep(j.sHaloEnd - 5, j.sHaloEnd, Math.abs(s));
+  // Sewn end inside the glass: a gentle uniform scale about the base centre.
+  const end = smoothstep(j.sHaloEnd - 3, j.sHaloEnd, Math.abs(s));
+  const k = 1 - 0.1 * end;
   const cx = (pOut + pIn) / 2;
-  const cy = (ht + H) / 2;
-  return pts.map((v) => {
-    const p = lerp(v.x, cx, end * 0.3);
-    const q = lerp(v.y, cy, end * 0.3);
-    return [p, q] as V2;
-  });
+  const cy = ht;
+  return pts.map((v) => [cx + (v.x - cx) * k, cy + (v.y - cy) * k] as V2);
 }
 
 function bandSweep(
@@ -186,9 +195,12 @@ function bandSweep(
   profileAt: (s: number) => V2[],
   segments: number,
   sMax: number,
+  /** Optional V from the profile point (mm); default is perimeter length. */
+  vOf?: (p: number, q: number) => number,
 ): THREE.BufferGeometry {
   const rings: THREE.Vector3[][] = [];
   const uvU: number[] = [];
+  const uvV: number[][] = [];
   const s0 = -sMax;
   const s1 = sMax;
   for (let i = 0; i <= segments; i++) {
@@ -197,8 +209,9 @@ function bandSweep(
     if (polygonArea(prof) < 0) prof = prof.slice().reverse();
     rings.push(prof.map(([p, q]) => band.toWorld(s, p, q)));
     uvU.push(s / 10);
+    if (vOf) uvV.push([...prof, prof[0]].map(([p, q]) => vOf(p, q) / 10));
   }
-  const g = ringSweep(rings, { caps: true, uvU });
+  const g = ringSweep(rings, { caps: true, uvU, uvV: vOf ? uvV : undefined });
   ensureTangents(g);
   return g;
 }
@@ -288,8 +301,9 @@ function wrapOuter(
 
 function moduleGeometry(cfg: HarmoniqConfig, band: Band, j: Junction) {
   const m = cfg.module;
-  const R = m.height / 2;
-  const a = (m.length - m.height) / 2;
+  const hx = m.length / 2;
+  const hy = (j.top - j.bottom) / 2;
+  const rc = Math.min(m.cornerRadius, hy - 0.01);
   const e = m.edgeRadius;
   const T = m.thickness;
   const solidProfile = (R0: number, T0: number, e0: number, dome: number): V2[] => {
@@ -314,12 +328,11 @@ function moduleGeometry(cfg: HarmoniqConfig, band: Band, j: Junction) {
     }
     return out;
   };
-  const glass = stadiumLathe(a, R, solidProfile(R, T, e, m.dome), 11, 5);
-  // Dark chassis inside the glass: hides the halo/arm junction and gives the
-  // smoked glass a defined depth (≈2 mm wall all round).
-  const wall = 2.1;
-  const core = stadiumLathe(a, R - wall, solidProfile(R - wall, T - wall * 2, 1.6, 0.15), 10, 5);
-  core.translate(0, 0, wall);
+  const glass = roundedRectLathe(hx, hy, rc, solidProfile(hy, T, e, m.dome), 7, 12, 4);
+  // A thin dark card on the inboard side: the outer glass reads as deep smoke.
+  const inset = 1.6;
+  const card = roundedRectLathe(hx - inset, hy - inset, Math.max(0.5, rc - inset), solidProfile(hy - inset, 2.2, 0.8, 0), 5, 10, 3);
+  card.translate(0, 0, 1.1);
   // Local: x → back (−Z), y → up, z → outward (+X).
   const pIn = cfg.halo.thickness + m.proud - m.thickness;
   const x0 = band.a + pIn;
@@ -328,12 +341,14 @@ function moduleGeometry(cfg: HarmoniqConfig, band: Band, j: Junction) {
     finalizeSolid(g);
   };
   place(glass);
-  place(core);
-  return { glass, core };
+  place(card);
+  return { glass, core: card };
 }
 
 interface ArmBend {
   heightFront: number;
+  /** Spine arc length per unit of local x. */
+  scale: number;
   point(x: number, y: number, z: number): THREE.Vector3;
   frame(x: number): { t: THREE.Vector3; u: THREE.Vector3; s: THREE.Vector3 };
   yMid(x: number): number;
@@ -344,7 +359,7 @@ function armSpine(cfg: HarmoniqConfig, band: Band, j: Junction): ArmBend {
   const A = cfg.arm;
   const tempHt = j.armH;
   const rakeShift = (tempHt / 2) * Math.sin(band.rake(band.sTemple));
-  const xArm = band.a + cfg.halo.thickness - (A.thickness + 0.1) / 2 - rakeShift;
+  const xArm = band.a + cfg.halo.thickness - (A.thickness + 0.04) / 2 - rakeShift;
   const p0 = new THREE.Vector3(xArm, tempHt / 2, A.z0);
   const horiz = Math.sqrt(A.length * A.length - A.drop * A.drop) * 0.97;
   const p3 = p0.clone().add(new THREE.Vector3(A.flare * 0.4, -A.drop, -horiz));
@@ -366,12 +381,13 @@ function armSpine(cfg: HarmoniqConfig, band: Band, j: Junction): ArmBend {
     const up = new THREE.Vector3().crossVectors(side, tan).normalize();
     return { p, t: tan, u: up, s: side };
   };
-  const hF = tempHt - 0.1;
+  const hF = tempHt - 0.04;
   const hR = A.heightRear;
   const xe = A.length - hR / 2;
   const ease = (x: number) => smoothstep(0, 1, x / xe);
   return {
     heightFront: hF,
+    scale,
     length: A.length,
     yMid: (x: number) => 0.2 * (hF - hR) * ease(Math.min(x, xe)),
     point(x, y, z) {
@@ -385,7 +401,43 @@ function armSpine(cfg: HarmoniqConfig, band: Band, j: Junction): ArmBend {
   };
 }
 
-function armGeometry(cfg: HarmoniqConfig, spine: ArmBend) {
+/**
+ * UV mapping that continues the shell's: u = band arc length / 10, v = profile
+ * perimeter / 10 (outer face measured from the shell profile at the tail end),
+ * so the brushed streaks run unbroken from the halo into the arm.
+ */
+interface ArmUV {
+  u0: number;
+  scale: number;
+  vOuter: (q: number) => number;
+}
+
+function armUVMapping(cfg: HarmoniqConfig, band: Band, j: Junction, spine: ArmBend): ArmUV {
+  const prof = shellProfile(cfg, band, j, band.sEnd);
+  const T = cfg.halo.thickness;
+  let acc = 0;
+  const outer: [number, number][] = [];
+  for (let i = 0; i < prof.length; i++) {
+    if (i > 0) acc += Math.hypot(prof[i][0] - prof[i - 1][0], prof[i][1] - prof[i - 1][1]);
+    if (prof[i][0] > T - 0.02) outer.push([prof[i][1], acc]);
+  }
+  outer.sort((a, b) => a[0] - b[0]);
+  const vOuter = (q: number) => {
+    if (outer.length < 2) return q;
+    if (q <= outer[0][0]) return outer[0][1] - (outer[0][0] - q);
+    for (let k = 1; k < outer.length; k++) {
+      if (q <= outer[k][0]) {
+        const t = (q - outer[k - 1][0]) / Math.max(1e-6, outer[k][0] - outer[k - 1][0]);
+        return lerp(outer[k - 1][1], outer[k][1], t);
+      }
+    }
+    const last = outer[outer.length - 1];
+    return last[1] + (q - last[0]);
+  };
+  return { u0: band.sTemple - cfg.arm.z0, scale: spine.scale, vOuter };
+}
+
+function armGeometry(cfg: HarmoniqConfig, spine: ArmBend, uvMap: ArmUV) {
   const A = cfg.arm;
   const hF = spine.heightFront;
   const hR = A.heightRear;
@@ -451,11 +503,18 @@ function armGeometry(cfg: HarmoniqConfig, spine: ArmBend) {
   const pos = g.getAttribute('position') as THREE.BufferAttribute;
   const nor = g.getAttribute('normal') as THREE.BufferAttribute;
   const tangents = new Float32Array(pos.count * 4);
+  const uvAttr = g.getAttribute('uv') as THREE.BufferAttribute;
   const v = new THREE.Vector3();
   const n = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
     n.fromBufferAttribute(nor, i);
+    {
+      const u = (uvMap.u0 + v.x * uvMap.scale) / 10;
+      const q = v.y + hF / 2;
+      const vv = n.z > 0.5 ? q / 10 : (q + cfg.arm.thickness) / 10;
+      uvAttr.setXY(i, u, vv);
+    }
     const f = spine.frame(v.x);
     const w = spine.point(v.x, v.y, v.z);
     const nw = new THREE.Vector3()
@@ -472,6 +531,7 @@ function armGeometry(cfg: HarmoniqConfig, spine: ArmBend) {
   g.setAttribute('tangent', new THREE.BufferAttribute(tangents, 4));
   pos.needsUpdate = true;
   nor.needsUpdate = true;
+  uvAttr.needsUpdate = true;
   return { geometry: g, yMidRear: (yTop(xe) + yBot(xe)) / 2 };
 }
 
@@ -484,22 +544,23 @@ function earRestGeometry(cfg: HarmoniqConfig, spine: ArmBend, yMidRear: number) 
   const f = spine.frame(xS);
   const back = new THREE.Vector3(f.t.x, 0, f.t.z).normalize();
   const side = f.s;
-  const e2 = q.clone().addScaledVector(f.t, E.sleeve + 5);
+  const e2 = q.clone().addScaledVector(f.t, E.sleeve + 4);
+  // One long bend (≈18 mm radius) instead of a knee.
   const pts = [
     q.clone(),
     q.clone().addScaledVector(f.t, 4),
     e2.clone(),
-    e2.clone().addScaledVector(back, 5).addScaledVector(UP, -5).addScaledVector(side, -1.0),
-    e2.clone().addScaledVector(back, 6.5).addScaledVector(UP, -16).addScaledVector(side, -2.2),
-    e2.clone().addScaledVector(back, 4.5).addScaledVector(UP, -27).addScaledVector(side, -3.2),
-    e2.clone().addScaledVector(back, 1.0).addScaledVector(UP, -(E.drop - 2)).addScaledVector(side, -E.tuck),
+    e2.clone().addScaledVector(back, 9).addScaledVector(UP, -4).addScaledVector(side, -E.tuck * 0.15),
+    e2.clone().addScaledVector(back, 11).addScaledVector(UP, -14).addScaledVector(side, -E.tuck * 0.4),
+    e2.clone().addScaledVector(back, 8).addScaledVector(UP, -26).addScaledVector(side, -E.tuck * 0.7),
+    e2.clone().addScaledVector(back, 3).addScaledVector(UP, -(E.drop - 2)).addScaledVector(side, -E.tuck),
   ];
   const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
   const total = curve.getLength();
   const rTip = E.diameterEnd / 2;
   // σ samples: uniform body + angular tip so the rounded end stays smooth.
   const sig: number[] = [];
-  const BODY = 48;
+  const BODY = 40;
   for (let k = 0; k <= BODY; k++) sig.push(((total - rTip) * k) / BODY);
   const TIP = 9;
   for (let k = 1; k <= TIP; k++) sig.push(total - rTip + rTip * Math.sin((Math.PI / 2) * (k / TIP)));
@@ -520,10 +581,10 @@ function earRestGeometry(cfg: HarmoniqConfig, spine: ArmBend, yMidRear: number) 
     let r: number;
     if (s <= sleeveEnd) {
       a = aSleeve;
-      const lip = Math.sin((Math.PI / 2) * clamp01(s / 1.4));
+      const lip = smoothstep(0, 6, s);
       r = lerp(A.thickness / 2 + 0.3, rSleeve, lip);
     } else {
-      const tr = smoothstep(sleeveEnd, sleeveEnd + 10, s);
+      const tr = smoothstep(sleeveEnd, sleeveEnd + 16, s);
       a = lerp(aSleeve, 0, tr);
       const body = clamp01((s - sleeveEnd) / (total - rTip - sleeveEnd));
       const rBody = lerp(E.diameterStart / 2, rTip, body);
@@ -587,33 +648,85 @@ export function createHarmoniqModel(
 
   // Halo.
   const j = junctionOf(cfg, band);
-  const shellGeo = bandSweep(band, (s) => shellProfile(cfg, band, j, s), segs, band.sEnd);
+  // Shell V is anchored to the outer face (V = height there), so the brushed
+  // streaks stay level through the temple dip and line up with the arm.
+  const T = cfg.halo.thickness;
+  const shellGeo = bandSweep(band, (s) => shellProfile(cfg, band, j, s), segs, band.sEnd, (p, q) => q + (T - p));
   const haloSegs = Math.round((segs * j.sHaloEnd) / band.sEnd);
   const linerGeo = bandSweep(band, (s) => linerProfile(cfg, band, j, s), haloSegs, j.sHaloEnd);
   const crownGeo = bandSweep(band, (s) => crownProfile(cfg, band, j, s), haloSegs, j.sHaloEnd);
   add('shell', mesh(shellGeo, mats.titanium));
-  add('liner', mesh(linerGeo, mats.liner), new THREE.Vector3(0, -2, 0));
-  add('crown', mesh(crownGeo, mats.textile), new THREE.Vector3(0, 26, 0));
+  // Exploded view: clean axes — crown up, contacts in, modules out, arms back.
+  add('liner', mesh(linerGeo, mats.liner));
+  add('crown', mesh(crownGeo, mats.textile), new THREE.Vector3(0, 30, 0));
 
   // Contacts and gaskets.
   const C = cfg.contacts;
   const contactCentres: THREE.Vector3[] = [];
+  const haloParts: THREE.BufferGeometry[] = [];
   C.sizes.forEach(([len, h], i) => {
     const sC = C.positions[i];
     const r = h / 2;
     const a = Math.max(0, len / 2 - r);
     const qC = (cfg.shell.lipHeight + cfg.partingGap + band.cushionBottom(sC)) / 2;
-    const pad = stadiumLathe(a, r, padProfile(r, C.standoff, C.padEdgeRadius, C.padDome), 10, 5);
+    const pad = stadiumLathe(a, r, padProfile(r, C.standoff, C.padEdgeRadius, C.padDome), 14, 5);
     wrapInner(pad, band, cfg, sC, qC);
-    const gas = stadiumLathe(a, r, gasketProfile(C.gasketClearance, C.gasketRim, C.gasketHeight), 10, 5);
+    const gas = stadiumLathe(a, r, gasketProfile(C.gasketClearance, C.gasketRim, C.gasketHeight), 13, 5);
     wrapInner(gas, band, cfg, sC, qC);
     ensureTangents(pad);
     ensureTangents(gas);
     const inward = band.normal(sC).negate();
-    add(`contact_${i}` as PartName, mesh(pad, mats.contacts[i]), inward.clone().multiplyScalar(18));
-    add(`gasket_${i}` as PartName, mesh(gas, mats.gasket), inward.clone().multiplyScalar(9));
+    // Halo plane on the liner around this pad (merged below).
+    {
+      const margin = 9;
+      const hw = len / 2 + margin;
+      const hh = h / 2 + margin;
+      const halo = new THREE.PlaneGeometry(hw * 2, hh * 2, 12, 6);
+      halo.translate(0, 0, 0.25);
+      const lp = halo.getAttribute('position');
+      const n = lp.count;
+      const aLocal = new Float32Array(n * 2);
+      const aHalf = new Float32Array(n * 2);
+      const aIndex = new Float32Array(n);
+      const aDir = new Float32Array(n * 3);
+      for (let k = 0; k < n; k++) {
+        aLocal[k * 2] = lp.getX(k);
+        aLocal[k * 2 + 1] = lp.getY(k);
+        aHalf[k * 2] = len / 2;
+        aHalf[k * 2 + 1] = h / 2;
+        aIndex[k] = i;
+        aDir[k * 3] = inward.x * 11;
+        aDir[k * 3 + 1] = inward.y * 11;
+        aDir[k * 3 + 2] = inward.z * 11;
+      }
+      // Wrap onto the liner face (z = distance toward the head).
+      mapPositions(halo, (v) => {
+        const sS = surfaceToS(band, sC, v.x, cfg.liner.face);
+        return band.toWorld(sS, cfg.liner.face - v.z, qC + v.y, new THREE.Vector3());
+      });
+      halo.setAttribute('aLocal', new THREE.BufferAttribute(aLocal, 2));
+      halo.setAttribute('aHalf', new THREE.BufferAttribute(aHalf, 2));
+      halo.setAttribute('aIndex', new THREE.BufferAttribute(aIndex, 1));
+      halo.setAttribute('aDir', new THREE.BufferAttribute(aDir, 3));
+      halo.deleteAttribute('normal');
+      halo.deleteAttribute('uv');
+      haloParts.push(halo);
+    }
+    add(`contact_${i}` as PartName, mesh(pad, mats.contacts[i]), inward.clone().multiplyScalar(11));
+    add(`gasket_${i}` as PartName, mesh(gas, mats.gasket), inward.clone().multiplyScalar(4));
     contactCentres.push(band.toWorld(sC, cfg.liner.face - C.standoff, qC));
   });
+
+  {
+    const merged = mergeGeometries(haloParts, false);
+    haloParts.forEach((g) => g.dispose());
+    const haloMesh = new THREE.Mesh(merged, mats.contactGlow);
+    haloMesh.name = 'contactGlow';
+    haloMesh.userData.noAO = true;
+    haloMesh.renderOrder = 9;
+    haloMesh.frustumCulled = false;
+    device.add(haloMesh);
+  }
 
   // Light line: recessed bezel, emissive slit, soft glow.
   const L = cfg.lightLine;
@@ -654,14 +767,14 @@ export function createHarmoniqModel(
     for (const o of [glowMesh, bezelMesh, slitMesh]) o.userData.noAO = true;
     lightGroup.add(bezelMesh, slitMesh, glowMesh);
   }
-  add('lightLine', lightGroup, band.normal(L.s).multiplyScalar(10));
+  add('lightLine', lightGroup);
 
   // Etched wordmark.
   const W = cfg.wordmark;
   const qW = W.heightRatio * effTitanium(band, j, W.s);
   {
     const family = options.fontFamily ?? 'Inter, "Helvetica Neue", Arial, sans-serif';
-    const wm = createWordmarkTexture(W.text, family, 400);
+    const wm = createWordmarkTexture(W.text, family, 500);
     const mmPerPx = W.capHeight / wm.pxPerCap;
     const w = wm.widthPx * mmPerPx;
     const h = wm.heightPx * mmPerPx;
@@ -684,29 +797,37 @@ export function createHarmoniqModel(
   const modR = new THREE.Group();
   modR.add(mesh(mirrorX(mod.glass), mats.glass, 'glass'), mesh(mirrorX(mod.core), mats.glassCore, 'core'));
   for (const g of [modL, modR]) g.traverse((o) => (o.userData.noAO = true));
-  add('module_L', modL, new THREE.Vector3(30, 4, 0));
-  add('module_R', modR, new THREE.Vector3(-30, 4, 0));
+  add('module_L', modL, new THREE.Vector3(24, 6, 0));
+  add('module_R', modR, new THREE.Vector3(-24, 6, 0));
 
   // Arms and ear rests.
   const spine = armSpine(cfg, band, j);
-  const arm = armGeometry(cfg, spine);
+  const arm = armGeometry(cfg, spine, armUVMapping(cfg, band, j, spine));
   const armL = mesh(arm.geometry, mats.titanium);
-  const armR = mesh(mirrorX(arm.geometry), mats.titanium);
+  const armRGeo = mirrorX(arm.geometry);
+  {
+    // The right shell's u runs negative; mirror the arm's u to match.
+    const uv = armRGeo.getAttribute('uv') as THREE.BufferAttribute;
+    for (let i = 0; i < uv.count; i++) uv.setX(i, -uv.getX(i));
+    const tan = armRGeo.getAttribute('tangent') as THREE.BufferAttribute;
+    for (let i = 0; i < tan.count; i++) tan.setXYZW(i, -tan.getX(i), -tan.getY(i), -tan.getZ(i), -tan.getW(i));
+  }
+  const armR = mesh(armRGeo, mats.titanium);
   // Long earcut triangles on the blade faces can't carry per-vertex AO.
-  armL.userData.aoConstant = 0.97;
-  armR.userData.aoConstant = 0.97;
-  add('arm_L', armL, new THREE.Vector3(6, 0, -34));
-  add('arm_R', armR, new THREE.Vector3(-6, 0, -34));
+  armL.userData.aoConstant = 1;
+  armR.userData.aoConstant = 1;
+  add('arm_L', armL, new THREE.Vector3(3, 0, -28));
+  add('arm_R', armR, new THREE.Vector3(-3, 0, -28));
   const ear = earRestGeometry(cfg, spine, arm.yMidRear);
-  add('earRest_L', mesh(ear.geometry, mats.earRest), new THREE.Vector3(10, -8, -58));
-  add('earRest_R', mesh(mirrorX(ear.geometry), mats.earRest), new THREE.Vector3(-10, -8, -58));
+  add('earRest_L', mesh(ear.geometry, mats.earRest), new THREE.Vector3(5, -10, -44));
+  add('earRest_R', mesh(mirrorX(ear.geometry), mats.earRest), new THREE.Vector3(-5, -10, -44));
 
   // Centre the device on its bounding box.
   const box = new THREE.Box3();
   device.updateMatrixWorld(true);
   device.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (m.isMesh && m.name !== 'lightGlow') {
+    if (m.isMesh && m.name !== 'lightGlow' && m.name !== 'contactGlow') {
       m.geometry.computeBoundingBox();
       box.union(m.geometry.boundingBox!.clone().applyMatrix4(m.matrixWorld));
     }
@@ -725,7 +846,7 @@ export function createHarmoniqModel(
   const aoUniform = { value: 1 };
   if (options.ao !== false) {
     bakeVertexAO(device, { rays: quality === 'high' ? 28 : 16, maxDist: 9, strength: 1.05 });
-    for (const m of [mats.titanium, mats.textile, mats.liner, mats.earRest, mats.gasket, ...mats.contacts]) {
+    for (const m of [mats.titanium, mats.textile, mats.liner, mats.earRest, ...mats.contacts]) {
       patchAO(m, aoUniform);
     }
   }
@@ -752,6 +873,7 @@ export function createHarmoniqModel(
     const k = clamp01(t);
     const e = k * k * (3 - 2 * k);
     aoUniform.value = 1 - smoothstep(0, 0.35, k);
+    mats.contactGlow.uniforms.uExplode.value = e;
     for (const name of PART_NAMES) {
       const dir = explodeDir[name];
       const obj = parts[name];
@@ -761,7 +883,10 @@ export function createHarmoniqModel(
   };
   const setContactGlow = (i: number, v: number) => {
     const m = mats.contacts[i];
-    if (m) m.emissiveIntensity = Math.max(0, v) * 0.55;
+    const k = Math.max(0, v);
+    if (m) m.emissiveIntensity = k * 0.2;
+    const arr = mats.contactGlow.uniforms.uGlow.value as number[];
+    if (i >= 0 && i < arr.length) arr[i] = k;
   };
   const signal = new THREE.Color('#F4F6F8');
   const setLightLine = (v: number) => {

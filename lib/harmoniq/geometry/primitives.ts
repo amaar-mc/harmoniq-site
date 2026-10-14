@@ -209,6 +209,88 @@ export function stadiumLathe(
   return g;
 }
 
+/**
+ * Like stadiumLathe but around a rounded rectangle (half sizes hx ≥ hy,
+ * corner radius rc). Inward offsets keep corners round until the radius is
+ * used up, then square them off, finally collapsing onto the centre segment.
+ */
+export function roundedRectLathe(
+  hx: number,
+  hy: number,
+  rc: number,
+  profile: V2[],
+  nArc = 6,
+  nSx = 10,
+  nSy = 4,
+): THREE.BufferGeometry {
+  type P = { sx: number; sy: number; nx: number; ny: number; tx: number; ty: number };
+  // tx/ty: position along a straight edge in [-1, 1] (0 for corner points).
+  const pts: P[] = [];
+  const corner = (sx: number, sy: number, a0: number) => {
+    for (let k = 0; k <= nArc; k++) {
+      const th = a0 + ((Math.PI / 2) * k) / nArc;
+      pts.push({ sx, sy, nx: Math.cos(th), ny: Math.sin(th), tx: 0, ty: 0 });
+    }
+  };
+  const edge = (n: number, nx: number, ny: number, from: number, to: number, alongX: boolean, sx: number, sy: number) => {
+    for (let k = 1; k < n; k++) {
+      const t = from + ((to - from) * k) / n;
+      pts.push({ sx, sy, nx, ny, tx: alongX ? t : 0, ty: alongX ? 0 : t });
+    }
+  };
+  corner(1, 1, 0);
+  edge(nSx, 0, 1, 1, -1, true, 0, 1);
+  corner(-1, 1, Math.PI / 2);
+  edge(nSy, -1, 0, 1, -1, false, -1, 0);
+  corner(-1, -1, Math.PI);
+  edge(nSx, 0, -1, -1, 1, true, 0, -1);
+  corner(1, -1, (3 * Math.PI) / 2);
+  edge(nSy, 1, 0, -1, 1, false, 1, 0);
+  const M = pts.length;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  let vAcc = 0;
+  for (let i = 0; i < profile.length; i++) {
+    const [d, z] = profile[i];
+    if (i > 0) vAcc += Math.hypot(d - profile[i - 1][0], z - profile[i - 1][1]);
+    const r = Math.max(0, rc + d);
+    const cx = Math.max(0, Math.min(hx - rc, hx + d));
+    const cy = Math.max(0, Math.min(hy - rc, hy + d));
+    for (const q of pts) {
+      let x: number;
+      let y: number;
+      if (q.tx !== 0 || q.ty !== 0 || (q.sx === 0) !== (q.sy === 0)) {
+        // Straight edge point.
+        const ex = q.sx !== 0 ? q.sx * (cx + r) : q.tx * cx;
+        const ey = q.sy !== 0 ? q.sy * (cy + r) : q.ty * cy;
+        x = ex;
+        y = ey;
+      } else {
+        x = q.sx * cx + q.nx * r;
+        y = q.sy * cy + q.ny * r;
+      }
+      positions.push(x, y, z);
+      uvs.push(x / 10, y / 10 + vAcc / 10);
+    }
+  }
+  const index: number[] = [];
+  for (let i = 0; i < profile.length - 1; i++) {
+    for (let j = 0; j < M; j++) {
+      const j1 = (j + 1) % M;
+      const a = i * M + j;
+      const b = i * M + j1;
+      const c = (i + 1) * M + j;
+      const d = (i + 1) * M + j1;
+      index.push(a, c, b, b, c, d);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(index);
+  return g;
+}
+
 /* ------------------------------------------------------------------ */
 /* Generic ring sweep                                                   */
 /* ------------------------------------------------------------------ */

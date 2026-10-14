@@ -79,41 +79,43 @@ function dataTexture(data: Uint8Array, w: number, h: number, srgb = false): THRE
  * roughness multiplier (G channel) and a faint tangent-space normal map.
  */
 export function createBrushedTextures(seed = 7) {
-  const W = 512;
+  const W = 1024;
   const H = 512;
   const rand = mulberry32(seed);
   const low = makeValueNoise(8, rand);
   const h = new Float32Array(W * H);
-  // Per-row random amplitudes with soft lengthwise breakup → streaks.
-  const rowA = new Float32Array(H);
-  const rowB = new Float32Array(H);
-  const rowPhase = new Float32Array(H);
+  // Fine straight hairlines that start and stop: each row holds 2–3 segments
+  // of random length with soft ends, over a very faint broad variation.
   for (let y = 0; y < H; y++) {
-    rowA[y] = rand() * 2 - 1;
-    rowB[y] = rand() * 2 - 1;
-    rowPhase[y] = rand();
-  }
-  for (let y = 0; y < H; y++) {
+    const segs = 2 + Math.floor(rand() * 2);
+    const segData: [number, number, number][] = [];
+    for (let k = 0; k < segs; k++) segData.push([rand(), 0.1 + rand() * 0.5, rand() * 2 - 1]);
+    const base = (rand() * 2 - 1) * 0.35;
     for (let x = 0; x < W; x++) {
       const u = x / W;
-      const v = y / H;
-      // Lengthwise envelope (periodic) so individual scratches fade in/out.
-      const env = 0.5 + 0.5 * Math.sin(2 * Math.PI * (u * 3 + rowPhase[y]));
-      const fine = rowA[y] * 0.7 + rowB[y] * 0.3 * env;
-      const broad = (low(u, v * 4) - 0.5) * 0.35;
-      h[y * W + x] = fine * 0.65 + broad;
+      let val = base;
+      for (const [st, len, amp] of segData) {
+        let d = u - st;
+        if (d < 0) d += 1;
+        if (d < len) {
+          const e = Math.min(d / (len * 0.2), (len - d) / (len * 0.2), 1);
+          val += amp * e * e * (3 - 2 * e);
+        }
+      }
+      const broad = (low(u * 0.25, (y / H) * 24) - 0.5) * 0.06;
+      h[y * W + x] = val * 0.5 + broad;
     }
   }
   const rough = new Uint8Array(W * H * 4);
   for (let i = 0; i < W * H; i++) {
-    const r = 0.82 + 0.18 * Math.max(-1, Math.min(1, h[i]));
+    const r = 0.965 + 0.035 * Math.max(-1, Math.min(1, h[i]));
     const b = Math.round(r * 255);
     rough[i * 4] = b;
     rough[i * 4 + 1] = b;
     rough[i * 4 + 2] = b;
     rough[i * 4 + 3] = 255;
   }
-  const normal = heightToNormal(h, W, H, 0.9);
+  const normal = heightToNormal(h, W, H, 0.4);
   return {
     roughness: dataTexture(rough, W, H),
     normal: dataTexture(normal, W, H),
@@ -143,7 +145,7 @@ export function createKnitTextures(seed = 11) {
     const y0 = rand() * H;
     const ang = (rand() - 0.5) * 0.9 + (rand() < 0.5 ? 0 : Math.PI / 2);
     const len = 4 + rand() * 10;
-    const val = rand() < 0.55 ? -1 : 1;
+    const val = rand() < 0.4 ? -1 : 1;
     for (let t = 0; t < len; t++) {
       const x = Math.round(x0 + Math.cos(ang) * t);
       const y = Math.round(y0 + Math.sin(ang) * t);
@@ -167,7 +169,7 @@ export function createKnitTextures(seed = 11) {
       const m = mid(u, v) - 0.5;
       const i = y * W + x;
       h[i] = loop * 0.9 + f * 0.55 + m * 0.35 + speck[i] * 0.08;
-      const heather = 0.9 + speck[i] * 0.09 + (fibre(u * 0.5 + 0.3, v) - 0.5) * 0.1 + (blotch(u, v) - 0.5) * 0.07 - (1 - loop) * 0.05;
+      const heather = 0.9 + speck[i] * 0.2 + (fibre(u * 0.5 + 0.3, v) - 0.5) * 0.1 + (blotch(u, v) - 0.5) * 0.02 - (1 - loop) * 0.05;
       const c = Math.round(Math.max(0, Math.min(1, heather)) * 255);
       col[i * 4] = c;
       col[i * 4 + 1] = c;

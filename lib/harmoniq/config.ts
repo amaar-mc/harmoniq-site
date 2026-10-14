@@ -20,7 +20,7 @@ export const HARMONIQ_CONFIG = {
     /** Inner surface, front to the temple line. */
     innerDepth: 62,
     /** Superellipse exponent of the plan curve (2 = ellipse). */
-    exponent: 2.45,
+    exponent: 2.0,
     /** Straight run past the temple line, hidden inside the module. */
     tail: 9,
     /** Overall height incl. crown, at centre and at the temples. */
@@ -33,7 +33,7 @@ export const HARMONIQ_CONFIG = {
     rakeTemple: 0,
     /** Outer face barrel (mm of outward bow at mid-height). */
     bow: 0.55,
-    segments: 120,
+    segments: 108,
   },
 
   shell: {
@@ -54,8 +54,8 @@ export const HARMONIQ_CONFIG = {
     face: 1.0,
     back: 4.6,
     /** Visible liner height between lip and cushion roll. */
-    visibleCenter: 14.5,
-    visibleTemple: 11.5,
+    visibleCenter: 16.5,
+    visibleTemple: 13,
   },
 
   crown: {
@@ -81,64 +81,67 @@ export const HARMONIQ_CONFIG = {
     /** Arc-length positions of each pad centre from the front centre (mm). */
     positions: [-59, -31.5, 0, 31.5, 59],
     standoff: 3.0,
-    gasketRim: 2.9,
+    gasketRim: 1.6,
     gasketHeight: 1.5,
-    gasketClearance: 0.35,
+    gasketClearance: 0.3,
     padEdgeRadius: 1.3,
-    padDome: 0.22,
+    padDome: 0.12,
   },
 
   lightLine: {
-    s: 44,
-    length: 16,
+    s: 30,
+    length: 19,
     height: 0.95,
-    bezel: 0.22,
+    bezel: 0.1,
     /** Height on the titanium face as a fraction of the visible face. */
     heightRatio: 0.56,
   },
 
   wordmark: {
     text: 'Harmoniq',
-    s: 70,
+    s: 58,
     /** Cap height in mm. */
-    capHeight: 3.5,
-    heightRatio: 0.47,
+    capHeight: 4.2,
+    heightRatio: 0.52,
   },
 
   module: {
-    length: 38,
-    height: 15.5,
-    thickness: 15,
+    length: 30,
+    height: 12.5,
+    thickness: 14,
     /** How far the glass stands proud of the titanium face. */
     proud: 0.25,
-    edgeRadius: 2.4,
+    /** Corner radius in side elevation. */
+    cornerRadius: 3.6,
+    /** Edge round where faces meet. */
+    edgeRadius: 2.0,
     dome: 0.3,
     /** Centre position relative to the temple point (z back is negative). */
-    z: -7,
+    z: -3,
     /** Gap between the crown top and the glass top. */
-    topClearance: 0.6,
+    topClearance: 0,
   },
 
   /** Where the titanium's top edge sweeps down under the glass into the arm. */
   junction: {
     /** Dip runs between these depths (mm in z; the temple point is z = 0). */
-    dipStartZ: 44,
-    dipEndZ: 10.5,
+    dipStartZ: 30,
+    dipEndZ: 10,
     /** Crown, liner and halo shell end this far inside the module front. */
     haloEndInset: 7,
   },
 
   arm: {
-    length: 70,
-    drop: 29,
+    length: 62,
+    drop: 22,
     /** Front height follows the dipped titanium under the module. */
     heightRear: 8.6,
     thickness: 3.5,
     edgeRadius: 1.0,
-    slotLength: 28,
+    slotLength: 24,
     slotHeight: 3.2,
     /** Slot centre as a fraction of arm length. */
-    slotCenter: 0.62,
+    slotCenter: 0.5,
     /** Where the arm starts behind the temple point (inside the module). */
     z0: -2,
     /** Plan-view outward bow so the arm clears the head. */
@@ -146,14 +149,14 @@ export const HARMONIQ_CONFIG = {
   },
 
   earRest: {
-    sleeve: 11,
-    run: 12,
-    drop: 35,
-    tuck: 4,
-    diameterStart: 9,
-    diameterEnd: 7,
-    sleeveHeight: 13.6,
-    sleeveThickness: 5.6,
+    sleeve: 9,
+    run: 10,
+    drop: 38,
+    tuck: 6,
+    diameterStart: 7.5,
+    diameterEnd: 5.8,
+    sleeveHeight: 10,
+    sleeveThickness: 4.4,
   },
 } as const;
 
