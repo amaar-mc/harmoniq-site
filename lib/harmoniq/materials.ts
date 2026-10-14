@@ -72,7 +72,7 @@ export function createGlowMaterial() {
         vec2 p = vLocal;
         p.x = max(abs(p.x) - (uHalf.x - uHalf.y), 0.0);
         float d = max(length(p) - uHalf.y, 0.0);
-        float g = exp(-d * d / 0.8) * 0.22 + exp(-d * d / 18.0) * 0.045;
+        float g = exp(-d * d / 0.8) * 0.3 + exp(-d * d / 18.0) * 0.045;
         float facing = smoothstep(0.0, 0.55, dot(normalize(vNormalW), normalize(vViewW)));
         float a = g * uIntensity * facing;
         gl_FragColor = vec4(uColor * a, a);
@@ -149,8 +149,8 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
   brushed.roughness.repeat.set(0.17, 0.1);
   brushed.normal.repeat.set(0.17, 0.1);
   const knit = createKnitTextures();
-  knit.normal.repeat.set(2.4, 2.4);
-  knit.color.repeat.set(2.4, 2.4);
+  knit.normal.repeat.set(1.7, 1.7);
+  knit.color.repeat.set(1.7, 1.7);
   const foam = createFoamNormalTexture();
   foam.repeat.set(0.9, 0.9);
   const grain = createGrainNormalTexture();
@@ -287,9 +287,9 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
 
   const bezel = new THREE.MeshPhysicalMaterial({
     name: 'bezel',
-    color: '#2b2b2d',
-    roughness: 0.6,
-    metalness: 0.2,
+    color: '#6b6862',
+    roughness: 0.4,
+    metalness: 0.6,
   });
 
   const light = new THREE.MeshBasicMaterial({
@@ -324,4 +324,17 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
       );
     },
   };
+}
+
+/** Drops the smoked glass to the opaque mobile treatment (performance fallback). */
+export function downgradeGlass(mats: HarmoniqMaterials) {
+  const g = mats.glass;
+  if (g.transmission === 0) return;
+  g.transmission = 0;
+  g.thickness = 0;
+  g.color.set('#3a3b40');
+  g.roughness = 0.08;
+  g.clearcoat = 1;
+  g.clearcoatRoughness = 0.04;
+  g.needsUpdate = true;
 }

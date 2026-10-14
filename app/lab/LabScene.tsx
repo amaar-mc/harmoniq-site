@@ -95,7 +95,7 @@ function Rig({ preset, instant }: { preset: CameraPreset; instant: boolean }) {
     camera.updateProjectionMatrix();
     c.setLookAt(...preset.position, ...preset.target, !first.current && !instant);
     first.current = false;
-  }, [preset, camera]);
+  }, [preset, camera, instant]);
   return <CameraControls ref={ref} makeDefault minDistance={0.3} maxDistance={12} smoothTime={0.35} />;
 }
 

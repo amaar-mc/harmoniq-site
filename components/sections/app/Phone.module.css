@@ -1,0 +1,774 @@
+/* ==========================================================================
+   App (05): three interface-concept screens on a generic device.
+   Sizes inside a screen are in cqi (1% of the screen's width) so the UI
+   scales with the device. --app-paper (0 graphite room, 1 paper room) is
+   scrubbed on the section and tunes shadows, rims and caption tone.
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------- */
+/* The trio                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.stage {
+  /* Sized from the space AppSection leaves under the header (a size container):
+     the trio fits both its height (less room for captions) and its width. */
+  --cap: clamp(34px, 4.6svh, 44px);
+  --gap: clamp(32px, 4.4cqw, 84px);
+  --pw-mid: min(
+    calc((100cqh - var(--cap)) * 0.4733),
+    calc((100cqw - 2 * var(--margin) - 2 * var(--gap)) * 1.07 / 3.07),
+    300px
+  );
+  --pw: calc(var(--pw-mid) / 1.07);
+  --stage-h: calc(var(--pw-mid) / 0.4733);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - (var(--stage-h) + var(--cap)) / 2);
+  height: var(--stage-h);
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--gap);
+  pointer-events: none;
+}
+
+.figure {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  flex: none;
+  z-index: 1;
+  will-change: transform;
+}
+
+.mid {
+  z-index: 2;
+}
+
+.mid .device {
+  --w: var(--pw-mid);
+}
+
+.caption {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + clamp(14px, 2svh, 22px));
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--ink) calc(var(--app-paper, 1) * 100%), var(--paper));
+}
+
+.captionIndex {
+  font-size: var(--eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--stone-text) calc(var(--app-paper, 1) * 100%), var(--stone-dark));
+}
+
+/* -------------------------------------------------------------------------- */
+/* The device                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.device {
+  --w: var(--pw);
+  --r: calc(var(--w) * 0.158);
+  --band: max(2px, calc(var(--w) * 0.0105));
+  --bezel: calc(var(--w) * 0.031);
+  position: relative;
+  width: var(--w);
+  aspect-ratio: 0.4733;
+  padding: var(--band);
+  border-radius: var(--r);
+  isolation: isolate;
+  /* Satin titanium band: a slow highlight travels around the edge. */
+  background:
+    linear-gradient(
+      152deg,
+      #f4f2ee 0%,
+      #cfcbc4 9%,
+      #a19d96 24%,
+      #c9c5be 41%,
+      #e9e6e1 50%,
+      #aaa69f 63%,
+      #8e8a84 80%,
+      #bdb9b2 92%,
+      #e1ded8 100%
+    );
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.7),
+    inset 0 0 0.5px 1px rgba(0, 0, 0, 0.08);
+}
+
+/* Two shadow sets crossfaded with the room: deep on graphite, soft and warm on paper. */
+.shadowDark,
+.shadowLight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.shadowDark {
+  opacity: calc(1 - var(--app-paper, 1));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 2px 3px rgba(0, 0, 0, 0.35),
+    0 24px 48px -12px rgba(0, 0, 0, 0.55),
+    0 60px 110px -30px rgba(0, 0, 0, 0.7);
+}
+
+.shadowLight {
+  opacity: var(--app-paper, 1);
+  box-shadow:
+    0 1px 2px rgba(46, 38, 30, 0.1),
+    0 14px 28px -10px rgba(46, 38, 30, 0.18),
+    0 48px 90px -28px rgba(46, 38, 30, 0.28);
+}
+
+/* The forward device sits a little closer to the light. */
+.mid .shadowLight {
+  box-shadow:
+    0 1px 2px rgba(46, 38, 30, 0.12),
+    0 18px 34px -12px rgba(46, 38, 30, 0.22),
+    0 60px 110px -30px rgba(46, 38, 30, 0.34);
+}
+
+/* One stadium key on the band's right edge. */
+.key {
+  position: absolute;
+  z-index: -1;
+  right: calc(var(--band) * -0.75);
+  top: 25%;
+  width: calc(var(--band) * 1.6);
+  height: 10.5%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8a867f, #d6d2cb 55%, #a39f98);
+}
+
+.glass {
+  position: relative;
+  height: 100%;
+  padding: var(--bezel);
+  border-radius: calc(var(--r) - var(--band));
+  background: #08080a;
+  box-shadow:
+    0 0 0 0.75px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.045);
+}
+
+.screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: calc(var(--r) - var(--band) - var(--bezel));
+  container-type: inline-size;
+  /* Keeps the rounded clip crisp under transforms. */
+  transform: translateZ(0);
+}
+
+/* The deep glass catches a faint diagonal reflection. */
+.glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    116deg,
+    rgba(255, 255, 255, 0.075) 0%,
+    rgba(255, 255, 255, 0.02) 26%,
+    rgba(255, 255, 255, 0) 40%
+  );
+}
+
+/* Light screens sit a touch lower in brightness while the room is dark. */
+.dim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #000;
+  opacity: calc((1 - var(--app-paper, 1)) * 0.16);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Screen UI (shared)                                                         */
+/* -------------------------------------------------------------------------- */
+
+.ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14cqi 7.5cqi 9cqi;
+  font-size: 4.4cqi;
+  line-height: 1.35;
+}
+
+/* Groups below the top bar share the height evenly. */
+.flow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-top: 10cqi;
+}
+
+.light {
+  background: linear-gradient(180deg, #f7f5f2 0%, var(--paper) 45%);
+  color: var(--ink);
+}
+
+.dark {
+  background:
+    radial-gradient(110% 52% at 50% 47%, rgba(244, 246, 248, 0.05), transparent 72%),
+    linear-gradient(180deg, #1c1c1e 0%, #141415 55%, #0f0f10 100%);
+  color: var(--paper);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 2.2cqi;
+  height: 5cqi;
+}
+
+.brandMark {
+  width: 5.4cqi;
+  height: 2cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.brand {
+  font-size: 3.9cqi;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.label {
+  font-size: 3.2cqi;
+  font-weight: 550;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-text);
+}
+
+.h {
+  font-size: 13cqi;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variation-settings: 'opsz' 32;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Today                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.greet {
+  margin-bottom: 1.8cqi;
+  font-size: 4.3cqi;
+  color: var(--stone-text);
+}
+
+.card {
+  padding: 4.4cqi;
+  border-radius: 9cqi;
+  background: #fcfbf9;
+  box-shadow:
+    0 0 0 1px rgba(22, 22, 23, 0.05),
+    0 5cqi 10cqi -6cqi rgba(46, 38, 30, 0.24);
+}
+
+/* The session's art: a graphite stadium carrying the device's light line. */
+.art {
+  position: relative;
+  height: 22cqi;
+  border-radius: 999px;
+  background:
+    radial-gradient(56% 110% at 50% 50%, rgba(244, 246, 248, 0.11), transparent 72%),
+    linear-gradient(180deg, #303035 0%, var(--graphite) 55%, #1c1c1f 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.artRing {
+  position: absolute;
+  inset: 3.2cqi 9cqi;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(205, 184, 154, 0.22);
+}
+
+.artLine {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36%;
+  height: 0.55cqi;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: var(--signal);
+  box-shadow:
+    0 0 1.6cqi 0.2cqi rgba(234, 242, 255, 0.55),
+    0 0 5cqi 0.8cqi rgba(234, 242, 255, 0.16);
+}
+
+.cardTitle {
+  margin-top: 5cqi;
+  padding-inline: 1.4cqi;
+  font-size: 6.6cqi;
+  font-weight: 400;
+  letter-spacing: -0.018em;
+  line-height: 1.15;
+}
+
+.cardDetail {
+  margin-top: 1.2cqi;
+  padding-inline: 1.4cqi;
+  font-size: 4.1cqi;
+  color: var(--stone-text);
+}
+
+.chips {
+  display: flex;
+  gap: 1.8cqi;
+  margin-top: 4.4cqi;
+  padding-inline: 1.4cqi;
+}
+
+.chip,
+.mood {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.6cqi;
+  height: 7.6cqi;
+  padding: 0 3.2cqi;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(139, 135, 129, 0.36);
+  font-size: 3.6cqi;
+  letter-spacing: 0.015em;
+  color: #4a4743;
+  white-space: nowrap;
+}
+
+.chipDot {
+  width: 3.6cqi;
+  height: 1.4cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.begin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 12.5cqi;
+  margin-top: 5cqi;
+  padding: 0 4.6cqi 0 5.6cqi;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 4.5cqi;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.beginDot {
+  width: 5.6cqi;
+  height: 2cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.list {
+  margin: 2.4cqi 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 3.4cqi;
+  height: 12.5cqi;
+  font-size: 4.2cqi;
+}
+
+.row + .row {
+  box-shadow: 0 -1px 0 rgba(139, 135, 129, 0.2);
+}
+
+/* Album "art": small vertical stadiums in the room's materials. */
+.thumb {
+  flex: none;
+  width: 4.8cqi;
+  height: 7.8cqi;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #dcd8d1, var(--titanium));
+}
+
+.thumb[data-i='0'] {
+  background: linear-gradient(180deg, #3b3b40, var(--graphite));
+}
+
+.thumb[data-i='2'] {
+  background: linear-gradient(180deg, #e6ddd0, var(--champagne));
+}
+
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -------------------------------------------------------------------------- */
+/* In session                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.live {
+  display: flex;
+  align-items: center;
+  gap: 3.2cqi;
+}
+
+.liveDot {
+  flex: none;
+  width: 6cqi;
+  height: 2.3cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+  box-shadow: 0 0 2.6cqi rgba(205, 184, 154, 0.45);
+}
+
+.liveText {
+  font-size: 11cqi;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variation-settings: 'opsz' 32;
+}
+
+.contacts {
+  margin-top: 7cqi;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 1.8cqi;
+}
+
+.dot {
+  width: calc(var(--cw, 1) * 8cqi);
+  height: 2.8cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.subLabel {
+  margin-top: 2.8cqi;
+  font-size: 3.2cqi;
+  font-weight: 550;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stone-dark);
+}
+
+/* The waveform's room: two stadium hairlines, the brand's loop, around the signal. */
+.waveStage {
+  position: relative;
+  flex: 1;
+  margin: 3cqi -2cqi 0;
+}
+
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 60cqi;
+  max-height: 100%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  box-shadow: inset 0 0 0 1px rgba(244, 246, 248, 0.07);
+}
+
+.haloInner {
+  width: 74%;
+  height: 40cqi;
+  box-shadow: inset 0 0 0 1px rgba(205, 184, 154, 0.2);
+}
+
+.wave {
+  position: absolute;
+  inset: 0;
+}
+
+.waveSvg {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 46cqi;
+  transform: translateY(-50%);
+  overflow: visible;
+  filter: drop-shadow(0 0 1.6cqi rgba(234, 242, 255, 0.5)) drop-shadow(0 0 6cqi rgba(234, 242, 255, 0.14));
+}
+
+.waveSvg path {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.baseline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+  pointer-events: none;
+}
+
+.now {
+  margin-top: 3cqi;
+}
+
+.track {
+  font-size: 6.6cqi;
+  font-weight: 400;
+  letter-spacing: -0.018em;
+  line-height: 1.15;
+}
+
+.artist {
+  margin-top: 1.4cqi;
+  font-size: 4cqi;
+  color: var(--stone-dark);
+}
+
+.progress {
+  position: relative;
+  display: block;
+  height: 1px;
+  margin-top: 5.4cqi;
+  background: rgba(244, 246, 248, 0.16);
+}
+
+.progressFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  background: rgba(244, 246, 248, 0.72);
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  right: -2.8cqi;
+  top: 50%;
+  width: 5.6cqi;
+  height: 2cqi;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: var(--paper);
+}
+
+.sessionFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2cqi;
+  margin-top: 7.5cqi;
+}
+
+.tone {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.8cqi;
+  font-size: 3.6cqi;
+  letter-spacing: 0.015em;
+  color: var(--stone-dark);
+  white-space: nowrap;
+}
+
+.toneDot {
+  width: 3.6cqi;
+  height: 1.4cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.end {
+  display: inline-flex;
+  align-items: center;
+  height: 10cqi;
+  padding: 0 4.2cqi;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(244, 246, 248, 0.24);
+  font-size: 3.8cqi;
+  font-weight: 450;
+  color: rgba(242, 240, 236, 0.92);
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* This week                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.bars {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4cqi;
+  padding-inline: 0.4cqi;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.6cqi;
+}
+
+.barTrack {
+  position: relative;
+  display: block;
+  width: 6.8cqi;
+  height: 40cqi;
+  border-radius: 999px;
+  background: var(--mist);
+  overflow: hidden;
+}
+
+.barFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--h, 0.5) * 100%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3b3b40, var(--graphite));
+}
+
+.barFillNow {
+  background: linear-gradient(180deg, #ddcdb5, var(--champagne));
+}
+
+.dayLabel {
+  font-size: 3.3cqi;
+  font-weight: 500;
+  color: var(--stone-text);
+}
+
+.moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.8cqi;
+  margin-top: 3.6cqi;
+}
+
+.family {
+  display: flex;
+  flex-direction: column;
+  padding: 4.6cqi 4.6cqi 5cqi;
+  border-radius: 9cqi;
+  background: #fcfbf9;
+  box-shadow:
+    0 0 0 1px rgba(22, 22, 23, 0.05),
+    0 5cqi 10cqi -6cqi rgba(46, 38, 30, 0.22);
+}
+
+.familyTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4cqi;
+}
+
+.avatars {
+  display: flex;
+}
+
+.avatars span {
+  width: 8.6cqi;
+  height: 8.6cqi;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e6e1d9, #cdc7be);
+  box-shadow: 0 0 0 0.9cqi #fcfbf9;
+}
+
+.avatars span + span {
+  margin-left: -2.8cqi;
+  background: linear-gradient(180deg, #ebdfcd, var(--champagne));
+}
+
+.familyTitle {
+  font-size: 4.6cqi;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.familyDetail {
+  margin-top: 0.8cqi;
+  font-size: 3.8cqi;
+  line-height: 1.3;
+  color: var(--stone-text);
+}
+
+/* Sharing is on: a stadium switch in champagne. */
+.toggle {
+  position: relative;
+  flex: none;
+  width: 10cqi;
+  height: 6cqi;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  right: 0.8cqi;
+  top: 0.8cqi;
+  width: 4.4cqi;
+  height: 4.4cqi;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0.4cqi 1cqi rgba(46, 38, 30, 0.22);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile: one device in focus, a sliver of each neighbour peeking. The        */
+/* scene pans the row during its hold (AppSection).                           */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .stage {
+    --cap: 36px;
+    --pw-mid: min(calc((100cqh - var(--cap)) * 0.4733), 70cqw, 300px);
+    --pw: var(--pw-mid);
+    /* Neighbours (at 0.88 scale) show ~22px of their edge. */
+    --gap: max(16px, calc(50cqw - var(--pw) * 0.56 - 22px));
+  }
+
+  .left,
+  .right {
+    scale: 0.88;
+  }
+}

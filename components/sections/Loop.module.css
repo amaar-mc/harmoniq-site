@@ -1,0 +1,896 @@
+/* ==========================================================================
+   04 · Closed loop. Pinned on graphite (painted by the stage).
+   Composition (desktop): headline top-left; the loop (47.3vw × 26vw) centred
+   on the device at (40vw, 54svh); the active station's panel in columns 9–12,
+   its index on the loop's top line. Mobile: the loop (83.7vw × 46vw) centred
+   on the device at (50vw, 30svh); the panel below it.
+   The loop box is set by the four --loop-* variables only (any aspect works:
+   the drawing, stations, light path and hand-off are derived from it).
+   ========================================================================== */
+
+.section {
+  --loop-cx: 40%;
+  --loop-cy: 54svh;
+  --loop-w: 47.32vw;
+  --loop-h: 26vw;
+  color: var(--fg);
+  --glow: 0 0 10px 1px rgba(234, 242, 255, 0.55), 0 0 32px 4px rgba(234, 242, 255, 0.16);
+  --loop-hair: rgba(189, 185, 178, 0.3);
+  --surface: var(--graphite);
+}
+
+.frame {
+  isolation: isolate;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Headline                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.head {
+  --head-gap: clamp(12px, 4.6svh - 8px, 44px);
+  position: absolute;
+  z-index: 2;
+  left: var(--margin);
+  top: calc(var(--nav-h) + var(--head-gap));
+  max-width: 48%;
+}
+
+.eyebrow {
+  margin-bottom: clamp(12px, 1.8svh, 20px);
+}
+
+.title {
+  /* Never reach the labels above the loop's top line (54svh − 13vw) on short, wide screens. */
+  font-size: max(
+    40px,
+    min(var(--title), calc((var(--loop-cy) - var(--loop-h) / 2 - 77px - var(--nav-h) - var(--head-gap)) / 1.1))
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* The loop                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.diagram {
+  position: absolute;
+  z-index: 1;
+  left: var(--loop-cx);
+  top: var(--loop-cy);
+  width: var(--loop-w);
+  height: var(--loop-h);
+  margin-left: calc(var(--loop-w) / -2);
+  margin-top: calc(var(--loop-h) / -2);
+  pointer-events: none;
+}
+
+.loopSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.base,
+.trail {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.base {
+  stroke: var(--loop-hair);
+  stroke-width: 1;
+}
+
+.trail {
+  stroke: rgba(236, 231, 222, 0.62);
+  stroke-width: 1.25;
+}
+
+.node {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.dot {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(189, 185, 178, 0.6);
+}
+
+.dotLit {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--champagne);
+  box-shadow: 0 0 10px rgba(205, 184, 154, 0.4);
+}
+
+.ring {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(205, 184, 154, 0.5);
+}
+
+.label {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: var(--fg);
+}
+
+.labelIdx {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: var(--stone-dark);
+}
+
+.labelTitle {
+  font-weight: 400;
+}
+
+/* Leader ticks: a 1px stroke from the label toward its station. */
+.label::after {
+  content: '';
+  position: absolute;
+  background: var(--loop-hair);
+}
+
+.light {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--signal);
+  box-shadow: var(--glow);
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform;
+}
+
+/* The hand-off line (HANDOFF_LINE): centred in the frame (50vw, 50svh). */
+.line {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 6px;
+  border-radius: 3px;
+  background: #f4f6f8;
+  box-shadow: var(--glow);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Panel column                                                               */
+/* -------------------------------------------------------------------------- */
+
+.column {
+  --col: calc((100% - 2 * var(--margin) - 11 * var(--gutter)) / 12);
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--margin) + 8 * (var(--col) + var(--gutter)));
+  width: calc(4 * var(--col) + 3 * var(--gutter));
+  /* The panel's index sits on the loop's top line. */
+  top: calc(var(--loop-cy) - var(--loop-h) / 2 - 5px);
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  pointer-events: none;
+}
+
+.stack > * {
+  grid-area: 1 / 1;
+}
+
+.intro {
+  align-self: start;
+  max-width: 26ch;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.panel {
+  grid-area: 1 / 1;
+  align-self: start;
+  opacity: 0;
+}
+
+.panelIndex {
+  display: flex;
+  gap: 7px;
+  color: var(--stone-dark);
+}
+
+.panelNum {
+  color: var(--champagne);
+}
+
+.panelTitle {
+  margin-top: 14px;
+  font-size: clamp(26px, 2.3vw, 34px);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.panelBody {
+  margin-top: 12px;
+  max-width: 34ch;
+  text-wrap: balance;
+}
+
+.sentence {
+  display: block;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Station readouts                                                           */
+/* -------------------------------------------------------------------------- */
+
+.figure {
+  position: relative;
+  margin-top: clamp(24px, 3.6svh, 40px);
+  padding-top: 20px;
+  border-top: 1px solid var(--hair);
+}
+
+.tag {
+  position: absolute;
+  top: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: var(--stone-dark);
+  white-space: nowrap;
+}
+
+/* 01 Sense */
+.sense {
+  height: 104px;
+}
+
+.senseArc {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  width: 100%;
+  height: 100px;
+  overflow: visible;
+}
+
+.senseArc path {
+  fill: none;
+  stroke: var(--loop-hair);
+  stroke-width: 1;
+}
+
+.contact {
+  position: absolute;
+  margin-top: 20px;
+  translate: -50% -50%;
+  border-radius: 999px;
+  background: #2e2e33;
+  box-shadow: inset 0 0 0 1px rgba(189, 185, 178, 0.42);
+}
+
+.contactWarm {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #ddcdb6, var(--champagne) 60%, #b9a384);
+  box-shadow:
+    0 0 14px 1px rgba(205, 184, 154, 0.38),
+    0 0 36px 6px rgba(205, 184, 154, 0.12);
+}
+
+/* 02 Interpret */
+.eeg {
+  padding-top: 18px;
+}
+
+.eegTags {
+  position: relative;
+  height: 12px;
+  margin-bottom: 4px;
+}
+
+.tagNow {
+  translate: -50% 0;
+}
+
+.tagForecast {
+  right: 0;
+}
+
+.eegSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.eegBase {
+  stroke: rgba(189, 185, 178, 0.12);
+  stroke-width: 1;
+}
+
+.eegHist {
+  fill: none;
+  stroke: rgba(242, 240, 236, 0.86);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.eegFore {
+  fill: none;
+  stroke: var(--champagne);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 4;
+  stroke-linecap: round;
+}
+
+.eegNowLine {
+  stroke: rgba(242, 240, 236, 0.4);
+  stroke-width: 1;
+}
+
+.eegNowDot {
+  fill: var(--signal);
+}
+
+/* 03 Personalize */
+.sliders {
+  display: grid;
+  gap: 22px;
+  padding-top: 24px;
+  padding-bottom: 8px;
+}
+
+.slider {
+  --v: 0.5;
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  column-gap: 12px;
+}
+
+.sliderLabel {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--stone-dark);
+}
+
+.track {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--loop-hair);
+}
+
+.ticks {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: calc(100% + 5px);
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--loop-hair) 0 1px, transparent 1px 100%) 0 0 / calc(10% - 0.1px) 100%;
+}
+
+.trackFill {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  bottom: 3px;
+  width: calc(6px + var(--v) * (100% - 12px));
+  border-radius: 999px;
+  background: rgba(189, 185, 178, 0.32);
+}
+
+.knob {
+  position: absolute;
+  top: 50%;
+  left: calc(6px + var(--v) * (100% - 12px));
+  width: 24px;
+  height: 10px;
+  margin: -5px 0 0 -12px;
+  border-radius: 999px;
+  background: var(--champagne);
+  box-shadow:
+    0 0 0 3px var(--surface),
+    0 0 14px rgba(205, 184, 154, 0.32);
+}
+
+/* 04 Deliver */
+.deliver {
+  padding-top: 58px;
+  padding-bottom: 30px;
+}
+
+.deliver > .tag {
+  top: 20px;
+  left: 0;
+}
+
+.capsule {
+  position: relative;
+  height: 64px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(189, 185, 178, 0.34);
+}
+
+.ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(205, 199, 189, 0.42);
+  opacity: 0;
+  animation: ripple 7.2s cubic-bezier(0.22, 0.55, 0.35, 1) infinite;
+  animation-play-state: paused;
+}
+
+.ripple:nth-child(2) {
+  animation-delay: -2.4s;
+}
+
+.ripple:nth-child(3) {
+  animation-delay: -4.8s;
+}
+
+.deliver[data-on='true'] .ripple {
+  animation-play-state: running;
+}
+
+@keyframes ripple {
+  0% {
+    inset: 0;
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  100% {
+    inset: -18px -14px;
+    opacity: 0;
+  }
+}
+
+.waveSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.wave {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+
+/* 05 Adapt */
+.adapt {
+  padding-top: 24px;
+}
+
+.adaptSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.adaptRow {
+  stroke: var(--loop-hair);
+  stroke-width: 1;
+}
+
+.adaptRet {
+  fill: none;
+  stroke: rgba(236, 231, 222, 0.62);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+}
+
+.chip {
+  position: absolute;
+  /* 22 / 92 of the readout's drawing, below the 24px padding. */
+  top: calc(24px + (100% - 24px) * 22 / 92);
+  translate: -50% -50%;
+  display: inline-grid;
+  place-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(205, 184, 154, 0.5);
+}
+
+.chipHome {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: var(--champagne);
+}
+
+.chipText {
+  position: relative;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  margin-right: -0.12em;
+  font-variant-numeric: tabular-nums;
+  color: var(--champagne);
+}
+
+.chipHome .chipText {
+  color: var(--ink);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hear 40 Hz                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin-top: 4px;
+  pointer-events: auto;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.demoBtn {
+  flex: none;
+  min-width: 168px;
+  height: 46px;
+  padding: 0 22px 0 20px;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.demoMeter {
+  position: relative;
+  width: 22px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(205, 184, 154, 0.28);
+  overflow: hidden;
+  flex: none;
+}
+
+.demoFill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--champagne);
+  transform-origin: 0 50%;
+}
+
+.demoBtn[data-playing] .demoFill {
+  animation: demoFill 5s linear both;
+}
+
+@keyframes demoFill {
+  from {
+    transform: scaleX(0.08);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.demoText {
+  white-space: nowrap;
+}
+
+.demoCopy {
+  flex: 1 1 168px;
+  min-width: 0;
+}
+
+.demoLabel {
+  font-size: 10.5px;
+  line-height: 1;
+}
+
+.demoNote {
+  margin-top: 7px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--stone-dark);
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Station labels by side                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .node[data-side-d='up'] .label {
+    bottom: 24px;
+    left: 0;
+    transform: translateX(-50%);
+  }
+
+  .node[data-side-d='down'] .label {
+    top: 24px;
+    left: 0;
+    transform: translateX(-50%);
+  }
+
+  .node[data-side-d='left'] .label {
+    right: 26px;
+    top: 0;
+    transform: translateY(-50%);
+  }
+
+  .node[data-side-d='up'] .label::after {
+    left: 50%;
+    top: calc(100% + 4px);
+    width: 1px;
+    height: 7px;
+  }
+
+  .node[data-side-d='down'] .label::after {
+    left: 50%;
+    bottom: calc(100% + 4px);
+    width: 1px;
+    height: 7px;
+  }
+
+  .node[data-side-d='left'] .label::after {
+    top: 50%;
+    left: calc(100% + 5px);
+    width: 8px;
+    height: 1px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .section {
+    --loop-cx: 50%;
+    --loop-cy: 30svh;
+    --loop-w: 83.72vw;
+    --loop-h: 46vw;
+  }
+
+  .column,
+  .head {
+    left: var(--margin);
+    right: var(--margin);
+    width: auto;
+    max-width: none;
+    top: max(55%, calc(var(--loop-cy) + var(--loop-h) / 2 + 56px));
+    transform: none;
+  }
+
+  .eyebrow {
+    margin-bottom: 12px;
+  }
+
+  .title {
+    font-size: 34px;
+  }
+
+  /* On mobile the intro sits under the headline (both leave as Sense begins). */
+  .intro {
+    padding-top: 82px;
+    max-width: 30ch;
+    font-size: 19px;
+  }
+
+  .label {
+    font-size: 11px;
+  }
+
+  .labelTitle {
+    display: none;
+  }
+
+  .label::after {
+    display: none;
+  }
+
+  .node[data-side-m='up'] .label {
+    bottom: 15px;
+    left: 0;
+    transform: translateX(-50%);
+  }
+
+  .node[data-side-m='down'] .label {
+    top: 15px;
+    left: 0;
+    transform: translateX(-50%);
+  }
+
+  .node[data-side-m='right'] .label {
+    left: 16px;
+    top: 0;
+    transform: translateY(-50%);
+  }
+
+  .labelIdx {
+    font-size: 10.5px;
+  }
+
+  .dot {
+    left: -3.5px;
+    top: -3.5px;
+    width: 7px;
+    height: 7px;
+  }
+
+  .ring {
+    left: -9px;
+    top: -9px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .light {
+    width: 16px;
+    height: 5px;
+  }
+
+  .panelTitle {
+    margin-top: 10px;
+    font-size: 26px;
+  }
+
+  .panelBody {
+    margin-top: 8px;
+    font-size: 16.5px;
+    line-height: 1.45;
+  }
+
+  .figure {
+    margin-top: 18px;
+    padding-top: 14px;
+  }
+
+  .sense {
+    height: 84px;
+  }
+
+  .senseArc {
+    top: 6px;
+  }
+
+  .contact {
+    margin-top: 6px;
+    scale: 0.84;
+  }
+
+  .eeg {
+    padding-top: 14px;
+  }
+
+  .sliders {
+    gap: 16px;
+    padding-top: 18px;
+  }
+
+  .slider {
+    grid-template-columns: 72px 1fr;
+  }
+
+  .deliver {
+    padding-top: 42px;
+    padding-bottom: 18px;
+  }
+
+  .deliver > .tag {
+    top: 14px;
+  }
+
+  .capsule {
+    height: 52px;
+  }
+
+  .adapt {
+    padding-top: 18px;
+  }
+
+  .chip {
+    top: calc(18px + (100% - 18px) * 22 / 92);
+    height: 20px;
+    padding: 0 8px;
+  }
+
+  .demo {
+    gap: 14px;
+  }
+
+  .demoBtn {
+    min-width: 138px;
+    height: 44px;
+    padding: 0 16px 0 15px;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .demoCopy {
+    flex-basis: 140px;
+  }
+
+  .demoNote {
+    font-size: 12.5px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion: no travel; ripples hold still as faint rings.              */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .ripple {
+    animation: none;
+    opacity: 0.32;
+  }
+
+  .ripple:nth-child(1) {
+    inset: -6px -5px;
+  }
+
+  .ripple:nth-child(2) {
+    inset: -12px -10px;
+    opacity: 0.2;
+  }
+
+  .ripple:nth-child(3) {
+    inset: -18px -14px;
+    opacity: 0.1;
+  }
+
+  .demoBtn[data-playing] .demoFill {
+    animation: none;
+  }
+}

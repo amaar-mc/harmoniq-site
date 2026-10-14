@@ -84,8 +84,8 @@ export const HARMONIQ_CONFIG = {
     gasketRim: 1.6,
     gasketHeight: 1.5,
     gasketClearance: 0.3,
-    padEdgeRadius: 1.3,
-    padDome: 0.12,
+    padEdgeRadius: 1.1,
+    padDome: 0.06,
   },
 
   lightLine: {
@@ -101,7 +101,7 @@ export const HARMONIQ_CONFIG = {
     text: 'Harmoniq',
     s: 58,
     /** Cap height in mm. */
-    capHeight: 4.2,
+    capHeight: 4.0,
     heightRatio: 0.52,
   },
 

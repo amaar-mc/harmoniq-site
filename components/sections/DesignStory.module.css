@@ -1,0 +1,171 @@
+/*
+ * 03 Design story — HTML layer.
+ * Desktop: a placard column in grid cols 1–4 (≈ 6–34vw), centred a little low;
+ *          the device owns ≈ 36–96vw. Progress rail in the left margin.
+ * Mobile:  the device owns the upper ≈ 55svh; the placard sits at the bottom
+ *          (≈ 60–92svh) with the progress row in its header.
+ */
+
+.layout {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  align-content: center;
+  padding-top: 14svh;
+  padding-bottom: 2svh;
+  pointer-events: none;
+}
+
+.column {
+  --stack-gap: clamp(32px, 5.4svh, 56px);
+  --rail-top: var(--stack-gap);
+  grid-column: 1 / span 4;
+  pointer-events: auto;
+}
+
+/* Persistent header: the section eyebrow and its hairline (and the progress rail). */
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  opacity: 0;
+}
+
+.heading {
+  flex: none;
+}
+
+.rule {
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+}
+
+/* All placards share one grid cell, so the column's height (and its top line) never changes. */
+.stack {
+  display: grid;
+  margin-top: var(--stack-gap);
+}
+
+.beat {
+  grid-area: 1 / 1;
+  opacity: 0;
+}
+
+.meta {
+  overflow: clip;
+  margin-bottom: clamp(18px, 2.8svh, 28px);
+  padding-bottom: 0.15em;
+}
+
+.metaInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.index {
+  color: var(--fg);
+}
+
+.pill {
+  width: 14px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--champagne);
+  flex: none;
+}
+
+.cell {
+  display: grid;
+}
+
+.cell > * {
+  grid-area: 1 / 1;
+}
+
+.headline {
+  font-size: clamp(32px, 2.9vw, 56px);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  font-variation-settings: 'opsz' 32;
+  color: var(--fg);
+  text-wrap: balance;
+}
+
+.body {
+  margin-top: clamp(18px, 2.8svh, 30px);
+  max-width: 36ch;
+  text-wrap: balance;
+}
+
+/* Narrow desktops / tablets: the column stays clear of the device (≈ 36vw), so the type steps down. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .headline {
+    font-size: clamp(28px, 3.3vw, 36px);
+  }
+
+  .body {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .layout {
+    align-content: end;
+    padding-top: 0;
+    padding-bottom: max(7svh, 32px);
+  }
+
+  .column {
+    grid-column: 1 / -1;
+  }
+
+  .header {
+    gap: 14px;
+  }
+
+  .column {
+    --stack-gap: 22px;
+  }
+
+  .meta {
+    margin-bottom: 14px;
+  }
+
+  .headline {
+    font-size: clamp(26px, 7.4vw, 32px);
+    line-height: 1.1;
+  }
+
+  .body {
+    margin-top: 14px;
+    font-size: 16px;
+  }
+}
+
+/* Short phones: tighten so the placard stays below the device (≈ 55svh). */
+@media (max-width: 767px) and (max-height: 720px) {
+  .layout {
+    padding-bottom: max(4.5svh, 24px);
+  }
+
+  .column {
+    --stack-gap: 16px;
+  }
+
+  .meta {
+    margin-bottom: 10px;
+  }
+
+  .headline {
+    font-size: 25px;
+  }
+
+  .body {
+    margin-top: 10px;
+    font-size: 15px;
+  }
+}

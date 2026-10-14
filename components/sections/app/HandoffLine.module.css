@@ -1,0 +1,33 @@
+/* The hand-off line (loop → app). Fixed above the sections, below the nav.
+   Width, height, colour and glow come from HANDOFF_LINE (timeline.ts). */
+
+.line,
+.ruler {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--handoff-w-desktop);
+  pointer-events: none;
+}
+
+.line {
+  z-index: 15;
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* An invisible twin at the exact rest position: centred in the 100svh frame. */
+.ruler {
+  top: 50svh;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  visibility: hidden;
+}
+
+@media (max-width: 767px) {
+  .line,
+  .ruler {
+    width: var(--handoff-w-mobile);
+  }
+}

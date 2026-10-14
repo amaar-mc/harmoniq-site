@@ -169,7 +169,7 @@ export function createKnitTextures(seed = 11) {
       const m = mid(u, v) - 0.5;
       const i = y * W + x;
       h[i] = loop * 0.35 + f * 0.7 + m * 0.35 + speck[i] * 0.12;
-      const heather = 0.9 + speck[i] * 0.2 + (fibre(u * 0.5 + 0.3, v) - 0.5) * 0.1 + (blotch(u, v) - 0.5) * 0.05 - (1 - loop) * 0.03;
+      const heather = 0.9 + speck[i] * 0.45 + (fibre(u * 0.5 + 0.3, v) - 0.5) * 0.22 + (m * 0.12) + (blotch(u, v) - 0.5) * 0.05 - (1 - loop) * 0.03;
       const c = Math.round(Math.max(0, Math.min(1, heather)) * 255);
       col[i * 4] = c;
       col[i * 4 + 1] = c;
@@ -243,7 +243,7 @@ export function createWordmarkTexture(text: string, fontFamily: string, weight =
   const ctx = canvas.getContext('2d')!;
   const font = `${weight} ${fontPx}px ${fontFamily}`;
   ctx.font = font;
-  const letterSpacing = 0.05 * fontPx;
+  const letterSpacing = 0.085 * fontPx;
   const chars = [...text];
   const widths = chars.map((c) => ctx.measureText(c).width);
   const textW = widths.reduce((a, b) => a + b, 0) + letterSpacing * (chars.length - 1);

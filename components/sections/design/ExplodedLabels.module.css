@@ -1,0 +1,69 @@
+/* Absolutely positioned over the pinned frame: frame px = viewport px while pinned. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.leader {
+  fill: none;
+  stroke: var(--fg);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.dot {
+  fill: var(--fg);
+  stroke: var(--graphite);
+  stroke-width: 1.5;
+  paint-order: stroke;
+  opacity: 0;
+}
+
+.label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 450;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+  white-space: nowrap;
+  text-shadow: 0 0 14px rgba(18, 18, 19, 0.55);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.label[data-side='left'] {
+  flex-direction: row-reverse;
+}
+
+.index {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-2);
+}
+
+@media (max-width: 767px) {
+  .overlay {
+    display: none;
+  }
+}

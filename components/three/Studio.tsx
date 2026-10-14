@@ -89,10 +89,21 @@ const DARK_DOME: DomeColors = {
 
 export type StudioMood = 'light' | 'dark';
 
-export function StudioEnvironment({ mood = 'light', intensity = 1 }: { mood?: StudioMood; intensity?: number }) {
+export function StudioEnvironment({
+  mood = 'light',
+  intensity = 1,
+  target,
+  resolution = 512,
+}: {
+  mood?: StudioMood;
+  intensity?: number;
+  /** Render into this scene's `environment` instead of the default scene (lets the site keep both moods ready). */
+  target?: THREE.Scene;
+  resolution?: number;
+}) {
   const light = mood === 'light';
   return (
-    <Environment key={mood} resolution={512} frames={1} environmentIntensity={intensity}>
+    <Environment key={mood} resolution={resolution} frames={1} environmentIntensity={intensity} scene={target}>
       <GradientDome colors={light ? LIGHT_DOME : DARK_DOME} />
       {/* Overhead softbox */}
       <Lightformer form="rect" intensity={light ? 1.1 : 1.8} position={[0, 7, 1]} rotation-x={Math.PI / 2} scale={[10, 6, 1]} />

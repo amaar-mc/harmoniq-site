@@ -43,6 +43,8 @@ export interface HarmoniqModel {
   config: HarmoniqConfig;
   /** Named points (device space, mm) for labels and choreography. */
   anchors: Record<string, THREE.Vector3>;
+  /** Exploded-view offsets per part (mm, device space). */
+  explodeDir: Partial<Record<PartName, THREE.Vector3>>;
   /** Lowest point when resting level (mm, device space). */
   restY: number;
   setExplode(t: number): void;
@@ -785,7 +787,7 @@ export function createHarmoniqModel(
   const qW = W.heightRatio * effTitanium(band, j, W.s);
   {
     const family = options.fontFamily ?? 'Inter, "Helvetica Neue", Arial, sans-serif';
-    const wm = createWordmarkTexture(W.text, family, 400);
+    const wm = createWordmarkTexture(W.text, family, 300);
     const mmPerPx = W.capHeight / wm.pxPerCap;
     const w = wm.widthPx * mmPerPx;
     const h = wm.heightPx * mmPerPx;
@@ -833,6 +835,57 @@ export function createHarmoniqModel(
   add('earRest_L', mesh(ear.geometry, mats.earRest), new THREE.Vector3(5, -10, -44));
   add('earRest_R', mesh(mirrorX(ear.geometry), mats.earRest), new THREE.Vector3(-5, -10, -44));
 
+  const frontOuter = band.toWorld(0, cfg.halo.thickness, band.titaniumHeight(0) * 0.5);
+  // Named points in device space (before centring).
+  const rawAnchors: Record<string, THREE.Vector3> = {
+    crownTop: band.toWorld(0, 5, band.height(0)),
+    shellFront: frontOuter,
+    titaniumSide: band.toWorld(48, cfg.halo.thickness, band.titaniumHeight(48) * 0.5),
+    lightLine: band.toWorld(L.s, band.outerP(L.s, qL), qL),
+    lightLineA: band.toWorld(L.s - L.length / 2, band.outerP(L.s - L.length / 2, qL), qL),
+    lightLineB: band.toWorld(L.s + L.length / 2, band.outerP(L.s + L.length / 2, qL), qL),
+    wordmark: band.toWorld(W.s, band.outerP(W.s, qW), qW),
+    contactCentre: contactCentres[2].clone(),
+    contactLeft: contactCentres[3].clone(),
+    liner: band.toWorld(-44, cfg.liner.face, cfg.shell.lipHeight + 2),
+    moduleL: new THREE.Vector3(band.a + cfg.halo.thickness + cfg.module.proud, j.yCentre, cfg.module.z),
+    armL: spine.point(cfg.arm.length * 0.5, 0, cfg.arm.thickness / 2),
+    earRestL: ear.tip.clone(),
+  };
+  contactCentres.forEach((c, i) => (rawAnchors[`contact_${i}`] = c.clone()));
+
+  return finishModel({
+    device,
+    parts,
+    explodeDir,
+    mats,
+    cfg,
+    band,
+    quality,
+    rawAnchors,
+    bakeAO: options.ao !== false,
+  });
+}
+
+export interface FinishArgs {
+  device: THREE.Group;
+  parts: Record<PartName, THREE.Object3D>;
+  explodeDir: Partial<Record<PartName, THREE.Vector3>>;
+  mats: HarmoniqMaterials;
+  cfg: HarmoniqConfig;
+  band: Band;
+  quality: Quality;
+  /** Device-space anchors (before centring). */
+  rawAnchors: Record<string, THREE.Vector3>;
+  /** Ray-cast vertex AO now (false when the geometry already carries baked AO). */
+  bakeAO: boolean;
+}
+
+/**
+ * Shared tail of the live generator and the baked loader: centring, world
+ * scale, AO hookup, anchors and the choreography controls.
+ */
+export function finishModel({ device, parts, explodeDir, mats, cfg, band, quality, rawAnchors, bakeAO }: FinishArgs): HarmoniqModel {
   // Centre the device on its bounding box.
   const box = new THREE.Box3();
   device.updateMatrixWorld(true);
@@ -853,31 +906,16 @@ export function createHarmoniqModel(
   root.scale.setScalar(cfg.worldScale);
   root.add(content);
 
-  // Ambient occlusion, faded out while exploded.
+  // Ambient occlusion (vertex colours), faded out while exploded.
   const aoUniform = { value: 1 };
-  if (options.ao !== false) {
-    bakeVertexAO(device, { rays: quality === 'high' ? 28 : 16, maxDist: 9, strength: 1.05 });
-    for (const m of [mats.titanium, mats.textile, mats.liner, mats.earRest, ...mats.contacts]) {
-      patchAO(m, aoUniform);
-    }
+  if (bakeAO) bakeVertexAO(device, { rays: quality === 'high' ? 28 : 16, maxDist: 9, strength: 1.05 });
+  const shell = parts.shell as THREE.Mesh | undefined;
+  if (shell?.geometry.getAttribute('color')) {
+    for (const m of [mats.titanium, mats.textile, mats.liner, mats.earRest, ...mats.contacts]) patchAO(m, aoUniform);
   }
 
-  const toDevice = (v: THREE.Vector3) => v.clone().sub(centre);
-  const frontOuter = band.toWorld(0, cfg.halo.thickness, band.titaniumHeight(0) * 0.5);
-  const anchors: Record<string, THREE.Vector3> = {
-    crownTop: toDevice(band.toWorld(0, 5, band.height(0))),
-    shellFront: toDevice(frontOuter),
-    titaniumSide: toDevice(band.toWorld(48, cfg.halo.thickness, band.titaniumHeight(48) * 0.5)),
-    lightLine: toDevice(band.toWorld(L.s, band.outerP(L.s, qL), qL)),
-    wordmark: toDevice(band.toWorld(W.s, band.outerP(W.s, qW), qW)),
-    contactCentre: toDevice(contactCentres[2]),
-    contactLeft: toDevice(contactCentres[3]),
-    liner: toDevice(band.toWorld(-44, cfg.liner.face, cfg.shell.lipHeight + 2)),
-    moduleL: toDevice(new THREE.Vector3(band.a + cfg.halo.thickness + cfg.module.proud, j.yCentre, cfg.module.z)),
-    armL: toDevice(spine.point(cfg.arm.length * 0.5, 0, cfg.arm.thickness / 2)),
-    earRestL: toDevice(ear.tip),
-  };
-  contactCentres.forEach((c, i) => (anchors[`contact_${i}`] = toDevice(c)));
+  const anchors: Record<string, THREE.Vector3> = {};
+  for (const [k, v] of Object.entries(rawAnchors)) anchors[k] = v.clone().sub(centre);
   const restY = box.min.y - centre.y;
 
   const setExplode = (t: number) => {
@@ -914,6 +952,7 @@ export function createHarmoniqModel(
     band,
     config: cfg,
     anchors,
+    explodeDir,
     restY,
     setExplode,
     setContactGlow,

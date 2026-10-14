@@ -1,0 +1,193 @@
+.root {
+  /* --len from globals.css */
+}
+
+.frame {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: calc(var(--nav-h) + 24px) var(--margin) clamp(40px, 7svh, 84px);
+}
+
+.copy {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: 28px;
+  align-items: end;
+}
+
+.title {
+  grid-column: 1 / span 7;
+  margin: 0;
+  font-size: clamp(56px, 8.6vw, 156px);
+  line-height: 0.92;
+}
+
+/* Words rise out of their own masks on load (CSS only, so it paints before JS). */
+.mask {
+  display: inline-block;
+  overflow: clip;
+  vertical-align: top;
+  padding: 0.04em 0.02em 0.12em;
+  margin: -0.04em -0.02em -0.12em;
+}
+
+.word {
+  display: inline-block;
+  animation: rise 1.5s var(--ease-out) both;
+  animation-delay: calc(0.35s + var(--i) * 0.07s);
+}
+
+.lines {
+  display: block;
+}
+
+.lineWrap {
+  display: block;
+  will-change: transform, opacity;
+}
+
+.meta {
+  grid-column: 1 / span 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+}
+
+.sub {
+  margin: 0;
+  max-width: 34ch;
+  animation: fadeUp 1.2s var(--ease-out) 0.95s both;
+}
+
+.chip {
+  animation: fadeUp 1.2s var(--ease-out) 1.15s both;
+}
+
+.cue {
+  grid-column: 12 / span 1;
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: fadeUp 1.2s var(--ease-out) 1.5s both;
+}
+
+.cueTrack {
+  position: relative;
+  width: 14px;
+  height: 30px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+}
+
+.cueDot {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 4px;
+  height: 7px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: var(--fg);
+  animation: cue 2.4s var(--ease-io) 2s infinite;
+}
+
+.cueLabel {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.32em;
+}
+
+@keyframes rise {
+  from {
+    transform: translate3d(0, 108%, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cue {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(10px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .frame {
+    padding-bottom: 34px;
+  }
+
+  .copy {
+    row-gap: 20px;
+  }
+
+  .title {
+    grid-column: 1 / -1;
+    font-size: clamp(54px, 15.5vw, 76px);
+  }
+
+  .meta {
+    grid-column: 1 / span 10;
+    gap: 16px;
+  }
+
+  .sub {
+    font-size: 17px;
+  }
+
+  .cue {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word {
+    animation: fade 0.6s ease both;
+  }
+
+  .sub,
+  .chip,
+  .cue {
+    animation: fade 0.6s ease 0.2s both;
+  }
+
+  .cueDot {
+    animation: none;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
