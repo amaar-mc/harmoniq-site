@@ -95,14 +95,14 @@ export function StudioEnvironment({ mood = 'light', intensity = 1 }: { mood?: St
     <Environment key={mood} resolution={512} frames={1} environmentIntensity={intensity}>
       <GradientDome colors={light ? LIGHT_DOME : DARK_DOME} />
       {/* Overhead softbox */}
-      <Lightformer form="rect" intensity={light ? 1.6 : 1.8} position={[0, 7, 1]} rotation-x={Math.PI / 2} scale={[10, 6, 1]} />
+      <Lightformer form="rect" intensity={light ? 1.1 : 1.8} position={[0, 7, 1]} rotation-x={Math.PI / 2} scale={[10, 6, 1]} />
       {/* Large key softbox, camera-left front, slightly above */}
-      <Lightformer form="rect" intensity={light ? 2.2 : 1.6} position={[6.5, 3.2, 4.5]} scale={[7, 4.5, 1]} target={[0, 0, 0]} />
+      <Lightformer form="rect" intensity={light ? 1.0 : 1.6} position={[6.5, 3.2, 4.5]} scale={[7, 4.5, 1]} target={[0, 0, 0]} />
       {/* Long key strip: the long highlight that runs along the band */}
-      <Lightformer form="rect" intensity={light ? 3.4 : 2.8} position={[5.5, 1.1, 5]} scale={[20, 0.7, 1]} target={[0, 0, 0]} />
+      <Lightformer form="rect" intensity={light ? 2.4 : 2.8} position={[5.5, 1.1, 5]} scale={[20, 0.7, 1]} target={[0, 0, 0]} />
       {/* Low strip below the horizon: vertical titanium faces seen from above
           mirror it as the long highlight along the band */}
-      <Lightformer form="rect" intensity={light ? 1.8 : 1.6} position={[3.5, -1.6, 5.5]} scale={[24, 0.8, 1]} target={[0, 0, 0]} />
+      <Lightformer form="rect" intensity={light ? 0.8 : 1.2} position={[3.5, -1.6, 5.5]} scale={[24, 1.6, 1]} target={[0, 0, 0]} />
       {/* Second strip, right front */}
       <Lightformer form="rect" intensity={light ? 1.8 : 1.6} position={[-6, 2.4, 4]} scale={[16, 0.6, 1]} target={[0, 0, 0]} />
       {/* Back rim */}
@@ -123,6 +123,8 @@ export function StudioEnvironment({ mood = 'light', intensity = 1 }: { mood?: St
       {/* Black flags */}
       <Lightformer form="rect" intensity={1} color="#000000" position={[-7, 0.2, 1.5]} scale={[5, 3, 1]} target={[0, 0, 0]} />
       <Lightformer form="rect" intensity={1} color="#000000" position={[2.5, 5.5, -5]} scale={[6, 1.6, 1]} target={[0, 0, 0]} />
+      {/* Low flag in front: the lower half of the titanium face falls off */}
+      <Lightformer form="rect" intensity={1} color="#000000" position={[4, -0.6, 5.5]} scale={[16, 1.8, 1]} target={[0, 0, 0]} />
     </Environment>
   );
 }
@@ -139,25 +141,28 @@ export function StudioLights({ mood = 'light' }: { mood?: StudioMood }) {
   );
 }
 
-export function StudioFloor({ y, opacity = 1 }: { y: number; opacity?: number }) {
+export function StudioFloor({ y, opacity = 1, mood = 'light' }: { y: number; opacity?: number; mood?: StudioMood }) {
+  // On dark backdrops a warm shadow would read lighter than the ground.
+  const soft = mood === 'light' ? '#2d2924' : '#000000';
+  const tight = mood === 'light' ? '#221f1b' : '#000000';
   return (
     <group position={[0, y, 0]}>
       <ContactShadows
-        opacity={0.28 * opacity}
-        scale={5.2}
-        blur={4.5}
-        far={2.4}
-        resolution={512}
-        color="#2d2924"
+        opacity={0.26 * opacity}
+        scale={9}
+        blur={3.2}
+        far={1.4}
+        resolution={1024}
+        color={soft}
         frames={1}
       />
       <ContactShadows
         opacity={0.55 * opacity}
-        scale={3}
+        scale={4}
         blur={0.9}
         far={0.12}
         resolution={512}
-        color="#221f1b"
+        color={tight}
         frames={1}
       />
     </group>

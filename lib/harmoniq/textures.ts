@@ -68,7 +68,7 @@ function dataTexture(data: Uint8Array, w: number, h: number, srgb = false): THRE
   tex.magFilter = THREE.LinearFilter;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.generateMipmaps = true;
-  tex.anisotropy = 8;
+  tex.anisotropy = 16;
   tex.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   tex.needsUpdate = true;
   return tex;
@@ -108,7 +108,7 @@ export function createBrushedTextures(seed = 7) {
   }
   const rough = new Uint8Array(W * H * 4);
   for (let i = 0; i < W * H; i++) {
-    const r = 0.965 + 0.035 * Math.max(-1, Math.min(1, h[i]));
+    const r = 0.91 + 0.09 * Math.max(-1, Math.min(1, h[i]));
     const b = Math.round(r * 255);
     rough[i * 4] = b;
     rough[i * 4 + 1] = b;
@@ -168,8 +168,8 @@ export function createKnitTextures(seed = 11) {
       const f = fibre(u, v) - 0.5;
       const m = mid(u, v) - 0.5;
       const i = y * W + x;
-      h[i] = loop * 0.9 + f * 0.55 + m * 0.35 + speck[i] * 0.08;
-      const heather = 0.9 + speck[i] * 0.2 + (fibre(u * 0.5 + 0.3, v) - 0.5) * 0.1 + (blotch(u, v) - 0.5) * 0.02 - (1 - loop) * 0.05;
+      h[i] = loop * 0.35 + f * 0.7 + m * 0.35 + speck[i] * 0.12;
+      const heather = 0.9 + speck[i] * 0.2 + (fibre(u * 0.5 + 0.3, v) - 0.5) * 0.1 + (blotch(u, v) - 0.5) * 0.05 - (1 - loop) * 0.03;
       const c = Math.round(Math.max(0, Math.min(1, heather)) * 255);
       col[i * 4] = c;
       col[i * 4 + 1] = c;
@@ -243,7 +243,7 @@ export function createWordmarkTexture(text: string, fontFamily: string, weight =
   const ctx = canvas.getContext('2d')!;
   const font = `${weight} ${fontPx}px ${fontFamily}`;
   ctx.font = font;
-  const letterSpacing = 0.01 * fontPx;
+  const letterSpacing = 0.05 * fontPx;
   const chars = [...text];
   const widths = chars.map((c) => ctx.measureText(c).width);
   const textW = widths.reduce((a, b) => a + b, 0) + letterSpacing * (chars.length - 1);

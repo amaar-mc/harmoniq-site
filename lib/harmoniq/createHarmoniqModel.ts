@@ -14,6 +14,7 @@ import {
   roundedRectLathe,
   softExtrude,
   stadiumLathe,
+  weldNormals,
   stadiumParam,
   type Corner,
   type V2,
@@ -116,8 +117,8 @@ function shellProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): 
   const lipH = lerp(sh.lipHeight, 1.2, m);
   const corners: Corner[] = [
     { p: lipFace, q: 0, r: lerp(sh.bottomInnerRadius, tailR, m), segs: 5 },
-    { p: T, q: 0, r: lerp(sh.bottomOuterRadius, tailR, mOut), segs: 9 },
-    { p: T, q: ht, r: lerp(sh.topEdgeRadius, tailR, mOut), segs: 5 },
+    { p: T, q: 0, r: lerp(sh.bottomOuterRadius, tailR, mOut), segs: 13 },
+    { p: T, q: ht, r: lerp(sh.topEdgeRadius, tailR, mOut), segs: 7 },
     { p: back, q: ht, r: lerp(0, tailR, m), segs: 4 },
     { p: back, q: lipH, r: 0 },
     { p: lipFace, q: lipH, r: lerp(0.55, 0.01, m), segs: 4 },
@@ -181,7 +182,8 @@ function crownProfile(cfg: HarmoniqConfig, band: Band, j: Junction, s: number): 
     true,
     'centripetal',
   );
-  const pts = curve.getSpacedPoints(CROWN_POINTS).slice(0, CROWN_POINTS);
+  // Fixed-parameter sampling keeps ring-to-ring correspondence stable.
+  const pts = Array.from({ length: CROWN_POINTS }, (_, k) => curve.getPoint(k / CROWN_POINTS));
   // Sewn end inside the glass: a gentle uniform scale about the base centre.
   const end = smoothstep(j.sHaloEnd - 3, j.sHaloEnd, Math.abs(s));
   const k = 1 - 0.1 * end;
@@ -331,7 +333,8 @@ function moduleGeometry(cfg: HarmoniqConfig, band: Band, j: Junction) {
   const glass = roundedRectLathe(hx, hy, rc, solidProfile(hy, T, e, m.dome), 7, 12, 4);
   // A thin dark card on the inboard side: the outer glass reads as deep smoke.
   const inset = 1.6;
-  const card = roundedRectLathe(hx - inset, hy - inset, Math.max(0.5, rc - inset), solidProfile(hy - inset, 2.2, 0.8, 0), 5, 10, 3);
+  const cardHy = hy * 0.5;
+  const card = roundedRectLathe(hx - inset, cardHy, Math.min(cardHy - 0.01, Math.max(0.5, rc - inset)), solidProfile(cardHy, 2.2, 0.6, 0), 5, 10, 3);
   card.translate(0, 0, 1.1);
   // Local: x → back (−Z), y → up, z → outward (+X).
   const pIn = cfg.halo.thickness + m.proud - m.thickness;
@@ -363,11 +366,18 @@ function armSpine(cfg: HarmoniqConfig, band: Band, j: Junction): ArmBend {
   const p0 = new THREE.Vector3(xArm, tempHt / 2, A.z0);
   const horiz = Math.sqrt(A.length * A.length - A.drop * A.drop) * 0.97;
   const p3 = p0.clone().add(new THREE.Vector3(A.flare * 0.4, -A.drop, -horiz));
-  // Leaves the shell tail dead straight, then flares and drops.
-  const p1 = p0.clone().add(new THREE.Vector3(0, 0, -A.length * 0.36));
+  // Leaves the shell tail dead straight (coaxial until it has fully exited
+  // the tail), then flares and drops.
+  const lead = Math.max(0, cfg.halo.tail + 3 + A.z0);
+  const pL = p0.clone().add(new THREE.Vector3(0, 0, -lead));
+  const p1 = pL.clone().add(new THREE.Vector3(0, 0, -(A.length - lead) * 0.36));
   const p2 = p3.clone().add(new THREE.Vector3(A.flare * 0.2, A.drop * 0.42, A.length * 0.3));
-  const curve = new THREE.CubicBezierCurve3(p0, p1, p2, p3);
-  const pts = curve.getSpacedPoints(200);
+  const curve = new THREE.CubicBezierCurve3(pL, p1, p2, p3);
+  const LEAD_N = 12;
+  const pts = [
+    ...Array.from({ length: LEAD_N }, (_, k) => new THREE.Vector3().lerpVectors(p0, pL, k / LEAD_N)),
+    ...curve.getSpacedPoints(200),
+  ];
   const poly = new Polyline(pts);
   const scale = poly.total / A.length;
   const frameAt = (x: number) => {
@@ -498,7 +508,7 @@ function armGeometry(cfg: HarmoniqConfig, spine: ArmBend, uvMap: ArmUV) {
   hole.closePath();
   shape.holes.push(hole);
 
-  const g = softExtrude(shape, A.thickness, A.edgeRadius, 4);
+  const g = softExtrude(shape, A.thickness, A.edgeRadius, 6);
   // Bend along the spine: x → along, y → up, z → outward. Rotate normals too.
   const pos = g.getAttribute('position') as THREE.BufferAttribute;
   const nor = g.getAttribute('normal') as THREE.BufferAttribute;
@@ -673,6 +683,7 @@ export function createHarmoniqModel(
     wrapInner(pad, band, cfg, sC, qC);
     const gas = stadiumLathe(a, r, gasketProfile(C.gasketClearance, C.gasketRim, C.gasketHeight), 13, 5);
     wrapInner(gas, band, cfg, sC, qC);
+    weldNormals(pad);
     ensureTangents(pad);
     ensureTangents(gas);
     const inward = band.normal(sC).negate();
@@ -774,7 +785,7 @@ export function createHarmoniqModel(
   const qW = W.heightRatio * effTitanium(band, j, W.s);
   {
     const family = options.fontFamily ?? 'Inter, "Helvetica Neue", Arial, sans-serif';
-    const wm = createWordmarkTexture(W.text, family, 500);
+    const wm = createWordmarkTexture(W.text, family, 400);
     const mmPerPx = W.capHeight / wm.pxPerCap;
     const w = wm.widthPx * mmPerPx;
     const h = wm.heightPx * mmPerPx;
@@ -888,10 +899,10 @@ export function createHarmoniqModel(
     const arr = mats.contactGlow.uniforms.uGlow.value as number[];
     if (i >= 0 && i < arr.length) arr[i] = k;
   };
-  const signal = new THREE.Color('#F4F6F8');
+  const signal = new THREE.Color('#EAF2FF');
   const setLightLine = (v: number) => {
     const k = Math.max(0, v);
-    mats.light.color.copy(signal).multiplyScalar(0.25 + 1.75 * k);
+    mats.light.color.copy(signal).multiplyScalar(0.25 + 1.05 * k);
     mats.glow.uniforms.uIntensity.value = k;
   };
   setLightLine(1);

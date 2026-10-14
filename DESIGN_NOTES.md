@@ -13,14 +13,14 @@ and how each conflict was resolved (conservative reading wins).
 
 | Element | What the board shows | Built as |
 |---|---|---|
-| Halo | One continuous band across the forehead, temple to temple. Brushed, satin titanium outer face with a crisp top edge. | A superellipse plan curve (n ≈ 2.45) swept with a titanium profile: barrel-bowed outer face, crisp 0.55 mm top edge, soft 3.2 mm bottom-outer radius, and a lip that wraps under the band to hold the liner. |
+| Halo | One continuous band across the forehead, temple to temple. Brushed, satin titanium outer face with a crisp top edge. | An elliptical plan curve (superellipse n = 2.0, which gives even forehead contact on the construction head) swept with a titanium profile: barrel-bowed outer face, crisp 0.55 mm top edge, soft 3.2 mm bottom-outer radius, and a lip that wraps under the band to hold the liner. |
 | Crown | A heathered grey textile cushion on top. It rolls inward over the top of the inner face; in the hero and front views it covers roughly the upper half of the inside. | A rolled cushion profile (closed centripetal spline) that sits on a 1.1 mm titanium ledge, bulges slightly outward, and rolls 2.6 mm past the liner toward the forehead, tucking into a crevice above the contacts. |
-| Liner + contacts | Graphite channel low on the inner face; champagne pads in dark foam gaskets; centre pad largest. Five read clearly in the front view. | Graphite liner between the titanium lip and the cushion roll. Five stadium pads (23×11, 19×10, 15×8.5 mm), domed tops, 1.3 mm edge radius, standing 3 mm proud, each in a 2.9 mm foam rim with a 0.35 mm shadow gap. |
+| Liner + contacts | Graphite channel low on the inner face; champagne pads in dark foam gaskets; centre pad largest. Five read clearly in the front view. | Graphite liner between the titanium lip and the cushion roll. Five stadium pads (23×11, 19×10, 15×8.5 mm), nearly flat satin tops, 1.3 mm edge radius, standing 3 mm proud, each in a 1.6 mm velvety foam rim with a 0.3 mm shadow gap; the liner shows around every gasket, as on the board. |
 | Light line | Hero and side: one slit near the front, just off-centre. Front view: a mirrored pair. | **One** light line, on the wearer's left, everywhere. The mirrored pair in the front view is the inconsistency. |
 | Wordmark | "Harmoniq", etched on the same side as the light line, toward the temple. | Canvas-rendered Inter wordmark on a conformal decal, darker and rougher than the brushed titanium so it reads as a laser etch. |
-| Temple modules | Smoked translucent glass where the halo meets the arm; in the side profile it sits on the top line, continuing the crown. | Stadium glass capsule (38 × 15.5 mm, 15 mm deep) in line with the crown, flush with the titanium face, with a dark chassis inside so the glass reads with depth instead of showing internals. |
-| Arms | Titanium blades running back and down, each with a long slot. In the side profile the titanium face flows straight into the arm. | The halo's titanium dips beneath the glass and continues as the arm: same section, an invisible 0.05 mm step. Arm 70 mm long, 29 mm drop, tapering to 8.6 mm, with a 28 × 3.2 mm stadium slot. |
-| Ear rests | Soft graphite tips curving down behind the ear, rounded end. | A variable-section sweep: a sleeve that grips the arm's tail, morphing from a stadium to a 9 mm round section, curving down 35 mm and tapering to a 7 mm hemispherical tip. |
+| Temple modules | Smoked translucent glass where the halo meets the arm; in the side profile it sits on the top line, continuing the crown. | Smoked-glass block (30 × 12.5 mm in elevation, 14 mm deep, 3.6 mm corner radius) seated on the titanium with one parting gap, its top flush with the crown so textile flows into glass. A dim internal spine gives the smoke depth. |
+| Arms | Titanium blades running back and down, each with a long slot. In the side profile the titanium face flows straight into the arm. | The titanium's top edge sweeps down under the glass and the face continues as the arm with a 0.02 mm step and continuous brushing, so it reads as one part. Arm 62 mm long, 22 mm drop, tapering to 10 mm, with a 30 × 4 mm stadium slot. |
+| Ear rests | Soft graphite tips curving down behind the ear, rounded end. | A variable-section sweep: a slim sleeve that tapers onto the arm's tail, morphing from a stadium to a 7.5 mm round section, turning down 38 mm in one long bend and tucking toward the skull to a 5.8 mm hemispherical tip that sits behind the auricle. |
 | Board's "front view" | It actually looks at the **inner** face from behind the wearer (contacts visible, arms toward the camera). | The lab's "Front (board)" preset matches that framing; a separate "True front" preset looks at the outer face. |
 
 Hidden geometry (undersides, inner faces of modules, backs of arms) is inferred with ordinary
@@ -35,27 +35,28 @@ Modelled in millimetres for a typical adult head. These numbers never appear in 
 |---|---|---|---|
 | Halo inner span | ~140 | 140 | — |
 | Halo depth (front → temple) | ~65 | 62 inner / 75 outer | The guide reads as inner-to-outer; this keeps the forehead fit right on the construction head. |
+| Plan curve | — | ellipse (n = 2.0) | Contacts sit 2–3 mm off the construction-head forehead evenly; n = 2.45 left the outer pads ~5 mm off. |
 | Height centre → temple | ~34 → ~28 | 34 → 28 | — |
 | Thickness | ~13 | 13 | — |
 | Crown | 16 × 6, 2 mm overhang | ~14 wide, 7.5–9.5 rise, 2.6 overhang, rolls down the inner face | The board's cushion is clearly fuller than 6 mm and covers the upper inner face; this splits the difference. |
-| Contacts | 23×11 / 19×10 / 15×8.5, 3 proud, 2 rim | same sizes, 3 proud, 2.9 rim | Wider foam rim to match the board's gaskets. |
-| Temple module | ~36 × 24 × 15 | 38 × 15.5 × 15 | Sits on the top line (as in the side view) instead of covering the whole band end; the titanium passes beneath it. |
-| Arm | 60–65 long, 25–30 drop, 24 → 12 tall, 3.5 thick, 40 × 4 slot | 70 long, 29 drop, ~13 → 8.6, 3.5 thick, 28 × 3.2 slot | Starts under the glass at the titanium's dipped height, so the visible blade is slimmer and longer, as in the board's side view. |
-| Ear rest | 35 drop, Ø 9 → 7 | 35 drop, Ø 9 → 7 | — |
+| Contacts | 23×11 / 19×10 / 15×8.5, 3 proud, 2 rim | same sizes, 3 proud, 1.6 rim | A slimmer foam rim keeps graphite visible around each gasket, as on the board. |
+| Temple module | ~36 × 24 × 15 | 30 × 12.5 × 14 | Sits on the top line (as in the side view) instead of covering the whole band end; the titanium passes beneath it. |
+| Arm | 60–65 long, 25–30 drop, 24 → 12 tall, 3.5 thick, 40 × 4 slot | 62 long, 22 drop, ~15 → 10, 3.5 thick, 30 × 4 slot | Starts under the glass at the titanium's dipped height, so the visible blade is slimmer, as in the board's side view; the drop puts the ear rest behind the ear on the construction head. |
+| Ear rest | 35 drop, Ø 9 → 7 | 38 drop, Ø 7.5 → 5.8 | Slimmer, so it continues the blade instead of reading as a slip-on boot. |
 
 ## 3. Material map
 
 | Part | Material (MeshPhysicalMaterial) |
 |---|---|
-| Shell, arms | Titanium: neutral silver (#B4B3B0), metal 1, roughness 0.36 × brushed streak map, anisotropy 0.5 along the band (explicit tangents), faint streak normal map |
-| Wordmark | Etched oxide: dark (#3F3D3A), metal 0.35, roughness 0.78, alpha-to-coverage edges |
-| Crown | Heathered knit: #7E7D7B × heather map, roughness 0.95, sheen 0.55, procedural jersey-knit normal map |
-| Liner | Soft-touch graphite: #4A4A4F, roughness 0.5, light clearcoat, fine grain normal map |
-| Gaskets | Open-cell foam: #222224, roughness 0.95, cellular normal map |
-| Contacts | Champagne: #D4C6B2, metal 1, roughness 0.27; emissive champagne drives the "warm-up" glow |
-| Modules | Smoked glass: transmission 0.95, IOR 1.5, clearcoat 1, smoke attenuation; chassis #3B3C41 inside. Mobile: glossy opaque fallback |
-| Light line | Emissive white slit (#F4F6F8 × 1.6, not tone-mapped) in a dark bezel, plus an analytic stadium-falloff glow that fades with view angle: restrained bloom on the light line only, with no post-processing pass |
-| Ear rests | Graphite soft-touch: #45454A, roughness 0.55, light sheen |
+| Shell, arms | Titanium: neutral silver (#B6B4B0), metal 1, roughness 0.27 × hairline roughness map, anisotropy 0.55 along the band (explicit tangents), faint hairline normal map |
+| Wordmark | Laser-etch oxide: #55524E, metal 0.4, roughness 0.65, Inter 400 with open tracking |
+| Crown | Heathered knit: #8A8987 × melange map, roughness 0.95, sheen 1 (#D9D5CF), procedural knit normal map |
+| Liner | Soft-touch graphite: #403F3D, roughness 0.62, soft sheen, fine grain normal map |
+| Gaskets | Open-cell foam: #2E2C2A, roughness 1, velvety sheen, cellular normal map |
+| Contacts | Satin champagne: #DCCBB4, metal 1, roughness 0.33. "Warm-up" = a capped emissive plus an additive halo that spills onto the liner (all five in one draw call) |
+| Modules | Smoked glass: transmission 0.95, IOR 1.5, clearcoat 0.8, smoke attenuation ≈ 10 mm; dim internal spine. Mobile: glossy opaque fallback |
+| Light line | Emissive slit (cool white, not tone-mapped) in a dark bezel, plus an analytic stadium-falloff glow that fades with view angle: restrained bloom on the light line only, with no post-processing pass |
+| Ear rests | Graphite soft-touch: #3B3A3A, roughness 0.72, sheen |
 
 Colours are a little lighter than the brief's starting values where the real-time lighting
 needed it (graphite albedo below ~#40 collapses to black under IBL).
@@ -107,8 +108,10 @@ needed it (graphite albedo below ~#40 collapses to black under IBL).
   black flags for edge definition. It uses Khronos PBR Neutral tone mapping, a transparent
   canvas over the CSS backgrounds, and soft contact shadows.
 
-**Budget (current):** ~55k triangles, 25 meshes. Desktop transmission adds a pre-pass for the
-glass; mobile uses the opaque glass fallback and skips it.
+**Budget (current):** 59.4k triangles, 26 meshes (24 draw calls with the shadow planes on
+mobile). Desktop transmission adds a pre-pass that re-draws the opaque meshes for the glass
+(~49 calls in total); `PerformanceMonitor` will drop to the opaque glass when frame time
+suffers, and mobile uses that fallback from the start.
 
 **Trade-offs.**
 - *Procedural vs Blender.* Code keeps every dimension editable and every part addressable for
@@ -128,3 +131,22 @@ controls, paper/graphite/charcoal backdrops, a construction-line head underlay a
 side profile, contacts close-up), with extra presets for true front, top, module, arm and
 underside. `scripts/shoot-lab.mjs` screenshots any set of presets and states with headless
 Chromium.
+
+## 7. Review process
+
+The model went through a five-lens critique (silhouette, materials and lighting, industrial-design
+realism, rendering artifacts, brand and framing). Each critic compared renders against the board
+crops and the generator code. The fixes it drove: the plan curve, gasket proportions, the crown
+roll self-intersection, the glass units bug, back-face-culled contact glow, contact-shadow plane
+edges, tangent-less anisotropy faceting, the halo-to-arm seam, and the preset framings.
+
+## 8. Open questions for the checkpoint
+
+- **Forked temple.** The board's side profile can also be read as two branches per side: a
+  smoked rail from the glass into the ear hook, above a separate slotted blade. The brief
+  describes one slotted titanium arm with a graphite ear rest, which is what's built. A forked
+  temple is an easy add if preferred.
+- **Module height.** The board's module looks taller than the crown at the temple. The glass
+  is kept slim (12.5 mm) so the titanium sweep stays the hero line.
+- **Crown volume.** The crown rises 9.5 mm at the centre (the brief guide says ~6, the board looks
+  like ~12).

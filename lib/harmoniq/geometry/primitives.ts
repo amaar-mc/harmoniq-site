@@ -750,3 +750,46 @@ export function ensureTangents(g: THREE.BufferGeometry) {
   }
   tan.needsUpdate = true;
 }
+
+/**
+ * Smooth normals by welding coincident positions (ignores UV seams and the
+ * duplicated pole rings of lathes), then copying the result back. Removes
+ * the faint creases that per-vertex normals show on degenerate rings.
+ * Hard creases made by repeating a profile point are lost, so only use this
+ * on surfaces that should be smooth everywhere, or where creases are 90°+
+ * and handled by flat caps.
+ */
+export function weldNormals(g: THREE.BufferGeometry, tolerance = 1e-4) {
+  const pos = g.getAttribute('position');
+  const idx = g.getIndex();
+  const key = (i: number) =>
+    `${Math.round(pos.getX(i) / tolerance)},${Math.round(pos.getY(i) / tolerance)},${Math.round(pos.getZ(i) / tolerance)}`;
+  const acc = new Map<string, THREE.Vector3>();
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const count = idx ? idx.count : pos.count;
+  for (let t = 0; t < count; t += 3) {
+    const ia = idx ? idx.getX(t) : t;
+    const ib = idx ? idx.getX(t + 1) : t + 1;
+    const ic = idx ? idx.getX(t + 2) : t + 2;
+    a.fromBufferAttribute(pos, ia);
+    b.fromBufferAttribute(pos, ib);
+    c.fromBufferAttribute(pos, ic);
+    const n = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+    for (const i of [ia, ib, ic]) {
+      const k = key(i);
+      const v = acc.get(k);
+      if (v) v.add(n);
+      else acc.set(k, n.clone());
+    }
+  }
+  const out = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const v = (acc.get(key(i)) ?? new THREE.Vector3(0, 1, 0)).clone().normalize();
+    out[i * 3] = v.x;
+    out[i * 3 + 1] = v.y;
+    out[i * 3 + 2] = v.z;
+  }
+  g.setAttribute('normal', new THREE.BufferAttribute(out, 3));
+}

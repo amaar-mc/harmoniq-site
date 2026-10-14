@@ -99,14 +99,20 @@ function Rig({ preset, instant }: { preset: CameraPreset; instant: boolean }) {
   return <CameraControls ref={ref} makeDefault minDistance={0.3} maxDistance={12} smoothTime={0.35} />;
 }
 
-/** Opaque clear in the backdrop colour: glass transmission samples the real backdrop. */
-function ClearColor({ color }: { color: string }) {
-  const gl = useThree((s) => s.gl);
+/**
+ * Backdrop as scene.background: glass transmission refracts the real backdrop,
+ * while drei's shadow pass (which nulls scene.background) still clears clear.
+ */
+function Backdrop({ color }: { color: string }) {
+  const scene = useThree((s) => s.scene);
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    gl.setClearColor(color, 1);
+    scene.background = new THREE.Color(color);
     invalidate();
-  }, [gl, color, invalidate]);
+    return () => {
+      scene.background = null;
+    };
+  }, [scene, color, invalidate]);
   return null;
 }
 
@@ -226,13 +232,13 @@ export default function LabScene() {
           gl.setClearColor(0x000000, 0);
         }}
       >
-        <ClearColor color={BACKDROPS[backdrop]} />
+        <Backdrop color={BACKDROPS[backdrop]} />
         <StudioEnvironment mood={dark ? 'dark' : 'light'} />
         <StudioLights mood={dark ? 'dark' : 'light'} />
         {model && (
           <>
             <Device model={model} pitch={preset.pitch ?? 0} onFloor={setFloorY} />
-            {floorY !== null && <StudioFloor key={floorY.toFixed(4)} y={floorY - 0.002} opacity={dark ? 0.6 : 1} />}
+            {floorY !== null && <StudioFloor key={`${floorY.toFixed(4)}-${dark}`} y={floorY - 0.002} opacity={dark ? 0.8 : 1} mood={dark ? 'dark' : 'light'} />}
             {head && <HeadUnderlay model={model} opacity={dark ? 0.5 : 0.75} />}
             <Stats model={model} />
           </>

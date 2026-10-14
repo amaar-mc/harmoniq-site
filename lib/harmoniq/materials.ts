@@ -72,7 +72,7 @@ export function createGlowMaterial() {
         vec2 p = vLocal;
         p.x = max(abs(p.x) - (uHalf.x - uHalf.y), 0.0);
         float d = max(length(p) - uHalf.y, 0.0);
-        float g = exp(-d * d / 2.2) * 0.42 + exp(-d * d / 26.0) * 0.07;
+        float g = exp(-d * d / 0.8) * 0.22 + exp(-d * d / 18.0) * 0.045;
         float facing = smoothstep(0.0, 0.55, dot(normalize(vNormalW), normalize(vViewW)));
         float a = g * uIntensity * facing;
         gl_FragColor = vec4(uColor * a, a);
@@ -136,6 +136,7 @@ export function createContactGlowMaterial() {
     `,
     transparent: true,
     depthWrite: false,
+    side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
     toneMapped: false,
   });
@@ -145,11 +146,11 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
   const brushed = createBrushedTextures();
   // Brush hairlines: one tile spans ~60 mm along the band and ~50 mm across
   // (rows ≈ 0.1 mm). Anisotropy carries the brushed read; this is fine grain.
-  brushed.roughness.repeat.set(0.17, 0.2);
-  brushed.normal.repeat.set(0.17, 0.2);
+  brushed.roughness.repeat.set(0.17, 0.1);
+  brushed.normal.repeat.set(0.17, 0.1);
   const knit = createKnitTextures();
-  knit.normal.repeat.set(1.6, 1.6);
-  knit.color.repeat.set(1.6, 1.6);
+  knit.normal.repeat.set(2.4, 2.4);
+  knit.color.repeat.set(2.4, 2.4);
   const foam = createFoamNormalTexture();
   foam.repeat.set(0.9, 0.9);
   const grain = createGrainNormalTexture();
@@ -162,7 +163,7 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
     roughness: 0.27,
     roughnessMap: brushed.roughness,
     normalMap: brushed.normal,
-    normalScale: new THREE.Vector2(0.05, 0.05),
+    normalScale: new THREE.Vector2(0.08, 0.08),
     anisotropy: 0.55,
     anisotropyRotation: 0,
     envMapIntensity: 1,
@@ -172,10 +173,10 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
   // brushed surface around it.
   const etch = new THREE.MeshPhysicalMaterial({
     name: 'etch',
-    color: '#4f4c48',
-    metalness: 0.15,
-    roughness: 0.85,
-    envMapIntensity: 0.4,
+    color: '#55524e',
+    metalness: 0.4,
+    roughness: 0.65,
+    envMapIntensity: 0.6,
     transparent: true,
     depthWrite: false,
     polygonOffset: true,
@@ -185,7 +186,7 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
 
   const textile = new THREE.MeshPhysicalMaterial({
     name: 'textile',
-    color: '#857f7a',
+    color: '#8a8987',
     map: knit.color,
     roughness: 0.95,
     metalness: 0,
@@ -251,7 +252,7 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
     quality === 'high'
       ? new THREE.MeshPhysicalMaterial({
           name: 'glass',
-          color: '#ffffff',
+          color: '#c9ccd2',
           metalness: 0,
           roughness: 0.04,
           transmission: 0.95,
@@ -259,12 +260,12 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
           // is in world units: 8 mm of glass, ~7 mm to fall to the smoke colour.
           thickness: 8,
           ior: 1.5,
-          attenuationColor: new THREE.Color('#9a9690'),
-          attenuationDistance: 0.07,
-          clearcoat: 1,
+          attenuationColor: new THREE.Color('#5a5650'),
+          attenuationDistance: 0.1,
+          clearcoat: 0.8,
           clearcoatRoughness: 0.05,
-          specularIntensity: 1,
-          envMapIntensity: 1.2,
+          specularIntensity: 0.7,
+          envMapIntensity: 1.1,
         })
       : new THREE.MeshPhysicalMaterial({
           name: 'glass',
@@ -278,17 +279,17 @@ export function createMaterials(quality: Quality = 'high'): HarmoniqMaterials {
 
   const glassCore = new THREE.MeshPhysicalMaterial({
     name: 'glassCore',
-    color: '#5a5b5f',
-    roughness: 0.35,
-    metalness: 0.5,
+    color: '#2b2c30',
+    roughness: 0.3,
+    metalness: 0,
     clearcoat: 0.2,
   });
 
   const bezel = new THREE.MeshPhysicalMaterial({
     name: 'bezel',
-    color: '#58585b',
-    roughness: 0.35,
-    metalness: 0.6,
+    color: '#2b2b2d',
+    roughness: 0.6,
+    metalness: 0.2,
   });
 
   const light = new THREE.MeshBasicMaterial({

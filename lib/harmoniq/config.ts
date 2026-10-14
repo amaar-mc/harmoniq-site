@@ -33,7 +33,7 @@ export const HARMONIQ_CONFIG = {
     rakeTemple: 0,
     /** Outer face barrel (mm of outward bow at mid-height). */
     bow: 0.55,
-    segments: 108,
+    segments: 96,
   },
 
   shell: {
@@ -92,7 +92,7 @@ export const HARMONIQ_CONFIG = {
     s: 30,
     length: 19,
     height: 0.95,
-    bezel: 0.1,
+    bezel: 0.2,
     /** Height on the titanium face as a fraction of the visible face. */
     heightRatio: 0.56,
   },
@@ -128,20 +128,20 @@ export const HARMONIQ_CONFIG = {
     dipStartZ: 30,
     dipEndZ: 10,
     /** Crown, liner and halo shell end this far inside the module front. */
-    haloEndInset: 7,
+    haloEndInset: 3,
   },
 
   arm: {
     length: 62,
     drop: 22,
     /** Front height follows the dipped titanium under the module. */
-    heightRear: 8.6,
+    heightRear: 10,
     thickness: 3.5,
     edgeRadius: 1.0,
-    slotLength: 24,
-    slotHeight: 3.2,
+    slotLength: 30,
+    slotHeight: 4,
     /** Slot centre as a fraction of arm length. */
-    slotCenter: 0.5,
+    slotCenter: 0.55,
     /** Where the arm starts behind the temple point (inside the module). */
     z0: -2,
     /** Plan-view outward bow so the arm clears the head. */
