@@ -1,44 +1,47 @@
-import type { Metadata } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
-import "./globals.css";
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import { SITE } from '@/content/copy';
+import './globals.css';
 
+// Inter only (brief §4), variable weight plus the optical-size axis for display type.
 const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const display = Instrument_Serif({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: "400",
-  display: "swap",
+  variable: '--font-inter',
+  subsets: ['latin'],
+  axes: ['opsz'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "Harmoniq — Tuning in to care",
-  description:
-    "Personalized AI music therapy and cognitive games for dementia, Alzheimer's, stroke recovery, and Parkinson's patients — with a caregiver dashboard that tracks cognitive progression over time.",
+  metadataBase: new URL('https://harmoniq.site'),
+  title: SITE.title,
+  description: SITE.description,
   openGraph: {
-    title: "Harmoniq — Tuning in to care",
-    description:
-      "AI-powered music therapy, cognitive games, and caregiver insights for neurological wellness.",
-    url: "https://harmoniq.site",
-    siteName: "Harmoniq",
-    type: "website",
+    title: SITE.title,
+    description: SITE.description,
+    url: 'https://harmoniq.site',
+    siteName: SITE.name,
+    type: 'website',
   },
-  metadataBase: new URL("https://harmoniq.site"),
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE.title,
+    description: SITE.description,
+  },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export const viewport: Viewport = {
+  themeColor: '#F2F0EC',
+  colorScheme: 'light',
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${display.variable} h-full antialiased`}
-    >
-      <body className="min-h-full">{children}</body>
+    <html lang="en" className={inter.variable} data-bg-tone="light" suppressHydrationWarning>
+      <head>
+        {/* Marks a scripted page before first paint; without it, dark sections paint their own ground. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

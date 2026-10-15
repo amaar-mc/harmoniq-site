@@ -1,0 +1,247 @@
+/* 06 · From research to product — editorial, on paper. */
+
+.section {
+  position: relative;
+  padding-block: clamp(128px, 24vh, 260px) clamp(112px, 20vh, 220px);
+}
+
+.layout {
+  align-items: start;
+}
+
+/* Sticky headline column ---------------------------------------------------- */
+
+.intro {
+  grid-column: 1 / span 4;
+  position: sticky;
+  top: calc(var(--nav-h) + 9vh);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 34px;
+}
+
+.eyebrow {
+  margin-bottom: 28px;
+  /* First baseline level with the chapter index and title. */
+  padding-top: calc((clamp(24px, 2.05vw, 31px) * 1.18 - 11.5px * 1.5) / 2 + 1px);
+}
+
+.title {
+  font-size: clamp(40px, 4.3vw, 66px);
+  font-weight: 300;
+  letter-spacing: -0.032em;
+  line-height: 1.03;
+  font-variation-settings: 'opsz' 32;
+  color: var(--fg);
+  max-width: 7.5em;
+  text-wrap: balance;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 48px;
+}
+
+.pill {
+  width: 12px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--hair);
+  transition:
+    width 0.7s var(--ease-out),
+    background-color 0.7s var(--ease-out);
+}
+
+.pill[data-on] {
+  width: 30px;
+  background: var(--champagne);
+}
+
+/* Chapters ------------------------------------------------------------------ */
+
+.chapters {
+  grid-column: 6 / -1;
+  counter-reset: chapter;
+}
+
+.chapter {
+  position: relative;
+  padding-block: 34px clamp(80px, 13vh, 132px);
+}
+
+.chapter:last-child {
+  padding-bottom: 0;
+}
+
+.rule {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--hair);
+  transform-origin: 0 50%;
+}
+
+.article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 6fr);
+  column-gap: var(--gutter);
+}
+
+.index {
+  grid-column: 1;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-2);
+  /* Sit on the chapter title's first baseline. */
+  padding-top: calc((clamp(24px, 2.05vw, 31px) * 1.18 - 13px * 1.5) / 2 + 1px);
+}
+
+.body {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.chapterTitle {
+  font-size: clamp(24px, 2.05vw, 31px);
+  font-weight: 360;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+  font-variation-settings: 'opsz' 28;
+  color: var(--fg);
+}
+
+.text {
+  margin-top: 20px;
+  font-size: var(--body);
+  line-height: 1.55;
+  color: var(--fg-2);
+  max-width: 35em;
+  text-wrap: pretty;
+}
+
+.aside {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 36px;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--fg-2);
+  max-width: 40ch;
+  text-wrap: balance;
+}
+
+.asideMark {
+  flex: none;
+  width: 14px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--champagne);
+  transform: translateY(-3px);
+}
+
+/* Recognition: a quiet text list, hairline-separated. */
+
+.recognition {
+  margin-top: 44px;
+}
+
+.recLabel {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: 14px;
+}
+
+.recList li {
+  padding-block: 13px 14px;
+  border-top: 1px solid var(--hair);
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.recList li:last-child {
+  border-bottom: 1px solid var(--hair);
+}
+
+/* Narrow layouts: one column, the headline leads ----------------------------- */
+
+@media (max-width: 959px) {
+  .intro {
+    grid-column: 1 / -1;
+    position: static;
+    padding-top: 0;
+    margin-bottom: clamp(56px, 9vh, 88px);
+  }
+
+  .title {
+    font-size: clamp(38px, 7vw, 56px);
+  }
+
+  .progress {
+    display: none;
+  }
+
+  .chapters {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .section {
+    padding-block: 112px 104px;
+  }
+
+  .eyebrow {
+    margin-bottom: 20px;
+  }
+
+  .title {
+    font-size: clamp(36px, 10.4vw, 48px);
+  }
+
+  .chapter {
+    padding-block: 24px 64px;
+  }
+
+  .article {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 14px;
+  }
+
+  .index {
+    grid-column: 1;
+    padding-top: 0;
+  }
+
+  .body {
+    grid-column: 1;
+  }
+
+  .chapterTitle {
+    font-size: 26px;
+  }
+
+  .text {
+    margin-top: 14px;
+    font-size: 17px;
+  }
+
+  .aside {
+    margin-top: 28px;
+  }
+
+  .recognition {
+    margin-top: 36px;
+  }
+}

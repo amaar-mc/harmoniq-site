@@ -1,0 +1,105 @@
+/* App (05): "Interface concept". The room arrives graphite and turns to
+   paper (painted by the director); --app-paper mirrors that crossfade for
+   the few things that adapt to it (shadows, rims, label tone). */
+
+.scene {
+  --app-paper: 1;
+}
+
+.frame {
+  display: flex;
+  flex-direction: column;
+}
+
+.head {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  padding-top: calc(var(--nav-h) + clamp(18px, 3.4svh, 44px));
+  align-items: end;
+}
+
+/* The phones' room: everything under the header (a size container). */
+.stageWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: clamp(28px, 5svh, 56px) 0 clamp(14px, 2.6svh, 30px);
+  container-type: size;
+}
+
+.titleBlock {
+  grid-column: 1 / span 6;
+}
+
+.eyebrow {
+  margin-bottom: clamp(14px, 2svh, 22px);
+  color: color-mix(in srgb, var(--stone-text) calc(var(--app-paper) * 100%), var(--stone-dark));
+}
+
+.title {
+  font-size: clamp(34px, min(4.4vw, 6.4svh), 64px);
+  max-width: 11.5em;
+}
+
+.sub {
+  grid-column: 9 / span 4;
+  justify-self: end;
+  max-width: 34ch;
+  padding-bottom: 0.3em;
+}
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .titleBlock {
+    grid-column: 1 / span 7;
+  }
+
+  .sub {
+    grid-column: 8 / span 5;
+  }
+}
+
+@media (max-width: 767px) {
+  .head {
+    padding-top: calc(var(--nav-h) + 12px);
+  }
+
+  .stageWrap {
+    margin: 26px 0 14px;
+  }
+
+  .titleBlock,
+  .sub {
+    grid-column: 1 / -1;
+  }
+
+  .eyebrow {
+    margin-bottom: 12px;
+  }
+
+  .title {
+    font-size: clamp(36px, 9.2vw, 40px);
+  }
+
+  .sub {
+    justify-self: start;
+    margin-top: 12px;
+  }
+}
+
+/* Without JS the frame no longer pins: keep it one screen tall on desktop, so
+   the phones' room (a size container) still has a height to fit them to. */
+@media (min-width: 768px) {
+  :global(html:not(.js)) .scene > .frame {
+    height: 100svh;
+  }
+}
+
+/* Without JS (phones): the screens stack, so the room grows with them. */
+@media (max-width: 767px) {
+  :global(html:not(.js)) .stageWrap {
+    flex: none;
+    container-type: inline-size;
+    margin-bottom: 72px;
+  }
+}

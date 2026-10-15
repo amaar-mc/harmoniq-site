@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Harmoniq
 
-## Getting Started
+A cinematic, scroll-driven product story for Harmoniq: a research-stage, EEG-guided headband
+concept that blends music with personalized 40 Hz sound in a closed loop. One real-time 3D
+device carries the whole page, from the first hairline to the closing line.
 
-First, run the development server:
+> Harmoniq is a research-stage concept. It is not a medical device, has not been evaluated by
+> the FDA, and is not intended to diagnose, treat, cure, or prevent any disease. Product
+> imagery shows a design render.
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Routes:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/`: the site.
+- `/lab`: the model lab (orbit viewer, part toggles, explode, glow, light line, head underlay,
+  backdrops). URL params drive it headlessly: `/lab?ui=0&preset=side&explode=0.6&head=1&bg=graphite`.
+- `/lab/bake`: runs the generator and serialises the model (used by `scripts/bake-model.mjs`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Useful query flags on `/`: `?nowebgl` forces the stills fallback; `?webgl=force` forces the
+live stage even on software WebGL (used by the screenshot scripts).
 
-## Learn More
+## How it is built
 
-To learn more about Next.js, take a look at the following resources:
+**One stage, many scenes.** A single fixed React Three Fiber canvas sits behind the page
+(`components/experience`). Sections are tall `<section data-scene>` tracks with a sticky
+100svh frame (`app/globals.css`), so pinning is native CSS.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**The director.** `components/experience/poses.ts` holds the choreography as keyframes anchored
+to scene progress (desktop and mobile sets): camera orbit (azimuth, elevation, distance,
+target, screen shift), device rotation and lift, explode, contact glow, light line, head
+drawing, floor, studio mood and the giant word. `poseAt(scrollY)` is a pure function of
+scroll; the stage damps toward it every frame. The page background (paper → graphite → paper
+→ charcoal) comes from the same timeline.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Rendering on demand.** The canvas runs with `frameloop="never"`: the director's GSAP ticker
+renders only when the pose changes or the light line is breathing, and stops entirely while
+the stage is off screen (app, research, founder).
 
-## Deploy on Vercel
+**Scroll.** Lenis on the GSAP ticker; every pinned section builds a scrubbed ScrollTrigger
+timeline (`lib/motion`), so scrolling back always restores the same frame. Section timelines
+build one per task as they near the viewport.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Text.** All copy lives in `content/copy.ts`; every factual line is annotated with the fact it
+relies on.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## The model
+
+The device is procedural (`lib/harmoniq`): `createHarmoniqModel(config)` builds the named parts
+from the dimensions in `config.ts` (band sweeps, stadium lathes, bent arms, ear-rest sweeps),
+with procedural textures and ray-cast vertex AO. The site loads a **bake** of that output:
+
+```bash
+npm run dev &
+node scripts/bake-model.mjs   # writes public/model/harmoniq-{high,low}.bin
+```
+
+The bake stores geometry (quantised positions/UVs, int16 normals/tangents) and AO, so the site
+only builds materials (~0.4 s instead of ~8–15 s). Re-run it after changing the generator or
+config. Mobile and coarse pointers use the `low` bake (opaque glass).
+
+## Fallbacks
+
+- **No WebGL or software WebGL** (no GPU, blocklisted drivers): pre-rendered stills of each
+  station crossfade as the page scrolls (`public/stills`, made by `scripts/shoot-stills.mjs`).
+- **Slow GPUs:** sustained slow frames step the pixel ratio from 2 to 1.5 to 1, then drop the
+  glass transmission pass.
+- **Reduced motion:** no smooth scroll, no camera travel and no breathing. The stage cuts between
+  stations with a short dip (never more than one every 0.6 s), and text crossfades.
+- **No JavaScript:** the scenes reflow into a static, fully readable page (stacked placards and
+  loop steps, the phones, the stills behind the opening screens).
+
+## Scripts
+
+All need the dev server (`npm run dev`); they use headless Chromium with SwiftShader WebGL.
+
+| Script | What it does |
+|---|---|
+| `scripts/shoot-site.mjs` | Screenshots named scroll stations (`--size 390x844 --dpr 2` for mobile). |
+| `scripts/shoot-stills.mjs` | Regenerates the no-WebGL stills. |
+| `scripts/shoot-meta.mjs` | Regenerates the share image and Apple touch icon. |
+| `scripts/bake-model.mjs` | Bakes the model into `public/model`. |
+| `scripts/shoot-lab.mjs` | Screenshots `/lab` presets and states. |
+| `scripts/frame-probe.mjs` | Tries camera framings at a station (`--poses '[{…}]'`). |
+| `scripts/compare-sheet.py` | Board-versus-lab comparison sheets. |
+
+Screenshots of every beat live in `screenshots/site/{desktop,mobile}`.
+
+## Placeholders
+
+- `CONTACT_URL` in `content/copy.ts` is `#follow` until the real destination exists.
+
+## Deploy
+
+Vercel: import the repo and deploy (framework auto-detected). See `DEPLOY.md` for domain setup.

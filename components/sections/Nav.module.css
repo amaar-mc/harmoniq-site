@@ -1,0 +1,299 @@
+/* Primary navigation — fixed, transparent, colour follows the page background. */
+
+.header {
+  --nav-fg: var(--ink);
+  --nav-fg-2: var(--stone-text);
+  --nav-hair: rgba(22, 22, 23, 0.2);
+  --focus: var(--ink);
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 30;
+  color: var(--nav-fg);
+  transition:
+    color 0.4s var(--ease-out),
+    transform 0.7s var(--ease-out);
+}
+
+/* Without JS the bar never learns the page tone: it scrolls away with the top of the page (on paper). */
+:global(html:not(.js)) .header {
+  position: absolute;
+}
+
+:global(html[data-bg-tone='dark']) .header {
+  --nav-fg: var(--paper);
+  --nav-fg-2: var(--stone-dark);
+  --nav-hair: rgba(242, 240, 236, 0.26);
+  --focus: var(--champagne);
+}
+
+.header[data-hidden]:not(:focus-within) {
+  transform: translateY(-100%);
+}
+
+/* Once the page has moved, a soft fade of the page colour keeps the bar legible
+   over copy scrolling beneath it (solid colour, no blur). Invisible at the top. */
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -28px;
+  background: linear-gradient(to bottom, var(--page-bg) 52%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--ease-out);
+}
+
+.header[data-scrolled]::before {
+  opacity: 1;
+}
+
+.bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  height: var(--nav-h);
+  padding-inline: var(--margin);
+}
+
+.wordmark {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-right: auto;
+  padding: 6px 8px;
+  margin-left: -8px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--nav-fg);
+  transition: color 0.4s var(--ease-out);
+}
+
+/* Links ---------------------------------------------------------------------- */
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 2.4vw, 36px);
+}
+
+.link {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  padding: 8px 10px;
+  margin-inline: -10px;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  color: var(--nav-fg-2);
+  transition: color 0.4s var(--ease-out);
+}
+
+.link:hover,
+.link[aria-current] {
+  color: var(--nav-fg);
+}
+
+/* The active section: a tiny stadium under the label. */
+.link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 12px;
+  height: 3px;
+  margin-left: -6px;
+  border-radius: 999px;
+  background: var(--champagne);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition:
+    opacity 0.5s var(--ease-out),
+    transform 0.5s var(--ease-out);
+}
+
+.link[aria-current]::after {
+  opacity: 1;
+  transform: none;
+}
+
+.linkIndex {
+  display: none;
+}
+
+/* Actions -------------------------------------------------------------------- */
+
+.actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 32px;
+  padding: 0 13px 0 15px;
+  border-radius: 999px;
+  border: 1px solid var(--nav-hair);
+  font-size: 13px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  color: var(--nav-fg);
+  transition:
+    color 0.4s var(--ease-out),
+    border-color 0.4s var(--ease-out);
+}
+
+.follow:hover {
+  border-color: var(--nav-fg);
+}
+
+.followDot {
+  width: 10px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--champagne);
+}
+
+.menuButton {
+  display: none;
+}
+
+/* Mobile: wordmark, Follow, menu button; links open as a sheet ---------------- */
+
+@media (max-width: 767px) {
+  .bar {
+    gap: 0;
+  }
+
+  .links {
+    display: none;
+  }
+
+  .menuButton {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-right: -10px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--nav-fg);
+    cursor: pointer;
+  }
+
+  /* Two hairlines that fold into a cross. */
+  .menuIcon,
+  .menuIcon::before {
+    display: block;
+    width: 18px;
+    height: 1.5px;
+    border-radius: 999px;
+    background: currentColor;
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .menuIcon {
+    position: relative;
+    transform: translateY(-3px);
+  }
+
+  .menuIcon::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+  }
+
+  .header[data-open] .menuIcon {
+    transform: translateY(0) rotate(45deg);
+  }
+
+  .header[data-open] .menuIcon::before {
+    transform: translateY(-6px) rotate(-90deg);
+  }
+
+  .header[data-open] .links {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    padding: calc(var(--nav-h) + 9svh) var(--margin) 40px;
+    background: var(--page-bg);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: sheetIn 0.5s var(--ease-out) both;
+  }
+
+  .header[data-open] .item {
+    border-top: 1px solid var(--nav-hair);
+  }
+
+  .header[data-open] .item:last-child {
+    border-bottom: 1px solid var(--nav-hair);
+  }
+
+  .header[data-open] .link {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    width: 100%;
+    margin-inline: 0;
+    padding: 18px 0 20px;
+    font-size: 30px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--nav-fg);
+  }
+
+  .header[data-open] .link::after {
+    display: none;
+  }
+
+  .header[data-open] .linkIndex {
+    display: inline;
+    min-width: 2ch;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    color: var(--nav-fg-2);
+    transform: translateY(-0.6em);
+  }
+
+  .header[data-open] .link[aria-current] .linkLabel {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: var(--champagne);
+  }
+}
+
+/* Without JS the menu button cannot open the sheet: leave the wordmark and Follow. */
+@media (max-width: 767px) {
+  :global(html:not(.js)) .menuButton {
+    display: none;
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

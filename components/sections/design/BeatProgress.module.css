@@ -1,0 +1,67 @@
+/*
+ * Desktop: a vertical rail in the left margin, its top aligned with the
+ * placard's index row (the header is its containing block; --rail-top is
+ * the gap between header and placard, set by the section).
+ */
+.rail {
+  --tick: 3px;
+  --tick-rest: 6px;
+  position: absolute;
+  left: calc(var(--margin) * -0.5 - var(--tick) * 0.5);
+  top: calc(100% + var(--rail-top, 0px) + 2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* Start state (the design timeline fades it in). Without JS there is no
+   progress to show: the placards are simply stacked. */
+:global(html.js) .rail {
+  opacity: 0;
+}
+
+:global(html:not(.js)) .rail {
+  display: none;
+}
+
+.tick {
+  position: relative;
+  display: block;
+  width: var(--tick);
+  height: var(--tick-rest);
+  border-radius: 999px;
+  background: var(--hair);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--fg);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+}
+
+/* Mobile: a horizontal row at the right end of the placard header. */
+@media (max-width: 767px) {
+  .rail {
+    --tick-rest: 8px;
+    position: static;
+    flex-direction: row;
+    gap: 6px;
+    flex: none;
+  }
+
+  .tick {
+    width: var(--tick-rest);
+    height: var(--tick);
+  }
+
+  .fill {
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+  }
+}
