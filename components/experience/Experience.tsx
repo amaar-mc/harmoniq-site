@@ -237,7 +237,11 @@ export default function Experience() {
           // Centred horizontally (it never crops mid-turn); vertically on the device.
           const x = window.innerWidth / 2;
           // Without a projected device (stills), use the reveal still's device height.
-          const yy = c ? c.y : window.innerHeight * (window.innerWidth < 768 ? 0.42 : 0.43);
+          // On phones the word stands a little above the device's centre, so its caps
+          // read above the crown and the band covers only their lower part.
+          const narrow = window.innerWidth < 768;
+          const lift = narrow ? 0.6 * window.innerWidth * 0.23 : 0;
+          const yy = (c ? c.y : window.innerHeight * (narrow ? 0.42 : 0.43)) - lift;
           word.style.transform = `translate3d(${x.toFixed(1)}px, ${yy.toFixed(1)}px, 0) translate(-50%, -50%) scale(${(1.06 - 0.06 * cur.word).toFixed(4)})`;
         }
       }
@@ -252,7 +256,7 @@ export default function Experience() {
           // Ends travel from the light line's ends to the viewport edges while
           // the line levels out: the light line becomes a full-width hairline.
           // Reduced motion: the finished hairline fades in, it does not stretch.
-          const e = reduce ? 1 : sine(h);
+          const e = reduce ? 1 : sine(Math.min(1, Math.max(0, (h - 0.35) / 0.65)));
           const vw = window.innerWidth;
           const lift = Math.max(0, y - closeEndY);
           const [L, R] = A.x <= B.x ? [A, B] : [B, A];

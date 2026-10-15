@@ -100,10 +100,10 @@ export const DESIGN = {
     // Ordered as they read on screen in the exploded view (01 → 07).
     { anchor: 'crownTop', label: 'Knit crown' },
     { anchor: 'contact_0', label: 'Dry contacts' },
-    { anchor: 'lightLine', label: 'Light line' },
     { anchor: 'shellFront', label: 'Titanium halo' },
-    { anchor: 'moduleL', label: 'Smoked-glass module' },
+    { anchor: 'lightLine', label: 'Light line' },
     { anchor: 'armL', label: 'Titanium arm' },
+    { anchor: 'moduleL', label: 'Smoked-glass module' },
     { anchor: 'earRestL', label: 'Graphite ear rest' },
   ],
 } as const;

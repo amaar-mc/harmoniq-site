@@ -33,8 +33,8 @@ export const DESIGN_BEATS: {
  * to the inside view, so the change reads as part of the move.
  */
 export const DESIGN_TONE: { desktop: Range; mobile: Range } = {
-  desktop: [0.334, 0.4],
-  mobile: [0.23, 0.31],
+  desktop: [0.352, 0.398],
+  mobile: [0.25, 0.3],
 };
 
 /** Fraction of the contacts beat at which the camera has arrived inside the band (copy waits for it). */

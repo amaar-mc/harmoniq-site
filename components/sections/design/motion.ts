@@ -89,7 +89,7 @@ export function buildDesignMotion({ reduce, root }: SceneMotionContext) {
   // --- Tone of the persistent chrome follows the background (paper → graphite). ---
   const paper = readTone(root, PAPER);
   const dark = readTone(root.querySelector('[data-tone="dark"]'), DARK);
-  tl.fromTo(chrome, { ...paper }, { ...dark, duration: plan.tone[1] - plan.tone[0], ease: 'none' }, at(plan.tone[0]));
+  tl.fromTo(chrome, { ...paper }, { ...dark, duration: plan.tone[1] - plan.tone[0], ease: 'power3.inOut' }, at(plan.tone[0]));
 
   // --- Header: the section's eyebrow and its hairline. ---
   if (reduce) {
@@ -97,6 +97,10 @@ export function buildDesignMotion({ reduce, root }: SceneMotionContext) {
     tl.fromTo(chrome, { opacity: 1 }, { opacity: 0, duration: last.out[1] - last.out[0], immediateRender: false }, at(last.out[0]));
   } else {
     gsap.set(chrome, { opacity: 1 });
+    // The chrome steps out while the room crosses the mid-greys, so it never sits at ~1:1.
+    const span = plan.tone[1] - plan.tone[0];
+    tl.to(chrome, { opacity: 0, duration: span * 0.35, ease: 'power1.in' }, at(plan.tone[0]));
+    tl.fromTo(chrome, { opacity: 0 }, { opacity: 1, duration: span * 0.35, ease: 'power1.out', immediateRender: false }, at(plan.tone[1] - span * 0.35));
     const hLines = split(heading);
     rise(tl, [hLines], at(first.in[0]), at(first.in[0] + (first.in[1] - first.in[0]) * 0.7));
     if (rule) {

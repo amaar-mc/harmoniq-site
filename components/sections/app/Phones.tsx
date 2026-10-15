@@ -13,8 +13,8 @@ import styles from './Phone.module.css';
 /** Captions under each device (UI labels, no claims). */
 const CAPTIONS = APP.captions;
 
-/** Illustrative bar fills (share of the stadium track); 0 = no session that day. No values are shown. */
-const WEEK_FILLS = [0.62, 0.8, 0.5, 0, 0.72, 0.88, 0.66];
+/** Session on that day (1) or not (0): consistency only, no magnitudes. */
+const WEEK_FILLS = [1, 1, 1, 0, 1, 1, 1];
 /** The five contact pills echo the hardware's five contacts (centre largest). */
 const CONTACT_WIDTHS = [0.7, 0.85, 1, 0.85, 0.7];
 

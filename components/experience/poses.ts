@@ -80,8 +80,8 @@ function desktopKeys(): KeySpec[] {
     k('reveal', 0.86, { dist: 4.0, el: 26, sy: 0.14, word: 1 }, 'linear'),
     k('reveal', 1, { word: 0, dist: 3.8 }),
     // 03a Halo: low three-quarter, a highlight sweeps along the titanium.
-    k('design', 0, { az: 46, el: 10, dist: 5.3, tx: 0.06, ty: 0.02, tz: -0.05, sx: 0.3, sy: 0.04, sweep: -55, breath: 0.4 }),
-    k('design', mid(B.halo, 0.92), { az: 38, el: 12, dist: 5.0, sweep: 55 }, 'linear'),
+    k('design', 0, { az: 46, el: 16, dist: 5.3, tx: 0.06, ty: 0.02, tz: -0.05, sx: 0.3, sy: 0.04, sweep: -55, breath: 0.4 }),
+    k('design', mid(B.halo, 0.92), { az: 38, el: 16, dist: 5.0, sweep: 55 }, 'linear'),
     // 03b Crown: from above.
     k('design', mid(B.crown, 0.35), { az: 18, el: 70, dist: 5.0, tx: 0.03, ty: 0, tz: -0.06, sx: 0.31, sy: 0, sweep: 20, breath: 0 }),
     k('design', mid(B.crown, 0.9), { az: 10, el: 76, dist: 4.9 }),
@@ -96,10 +96,10 @@ function desktopKeys(): KeySpec[] {
     k('design', mid(B.fit, 0.7), { az: 86 }),
     k('design', mid(B.fit, 1), { az: 52, el: 14, dist: 6.2, headAlpha: 0 }),
     // 03e Layers: exploded along clean axes, labels, reassembly.
-    k('design', lay(0.06), { az: 44, el: 24, dist: 7.0, tx: 0.08, ty: 0.02, tz: -0.06, fov: 29, sx: 0.28, sy: 0.04, rx: -6, head: 0, explode: 0 }),
-    k('design', lay(LAYERS.explode[1]), { explode: 1, az: 40, el: 28, dist: 7.4 }),
-    k('design', lay(LAYERS.reassemble[0]), { explode: 1, az: 34, el: 29 }, 'linear'),
-    k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 30, el: 28, dist: 6.9 }),
+    k('design', lay(0.06), { az: 44, el: 30, dist: 7.0, tx: 0.08, ty: 0.02, tz: -0.06, fov: 29, sx: 0.28, sy: -0.02, rx: -6, head: 0, explode: 0 }),
+    k('design', lay(LAYERS.explode[1]), { explode: 1, az: 40, el: 35, dist: 7.4 }),
+    k('design', lay(LAYERS.reassemble[0]), { explode: 1, az: 34, el: 35 }, 'linear'),
+    k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 30, el: 32, dist: 6.9 }),
     // 04 Loop: small, from above and behind; the loop is drawn around it.
     k('loop', 0, { az: 196, el: 60, dist: 12.6, tx: 0, ty: 0, tz: 0, fov: 23, sx: -0.2, sy: -0.08, rx: 0, light: 1, breath: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.1), { glow: 0 }),
@@ -114,13 +114,14 @@ function desktopKeys(): KeySpec[] {
     k('loop', LOOP.handoff[0], { stage: 1, light: 1 }),
     k('loop', mid(LOOP.handoff, 0.6), { stage: 0, light: 1.6, glow: 2 }),
     // 05–07: the stage rests (rendering pauses); jump to the close pose unseen.
-    k('close', -0.02, { stage: 0, az: 34, el: 11, dist: 8.6, tx: 0, ty: 0, tz: 0, sx: 0, sy: 0.4, ry: -50, glow: 0, light: 1, breath: 1, mood: 1, floor: 0 }),
+    k('close', -0.02, { stage: 0, az: 34, el: 22, dist: 8.6, tx: 0, ty: 0, tz: 0, sx: 0, sy: 0.44, ry: -50, glow: 0, light: 1, breath: 1, mood: 1, floor: 0 }),
     // 08 Close: charcoal, the device turning, the light line breathing.
     k('close', 0.12, { stage: 1, ry: -36 }),
     // The device turns its light line toward us, then dissolves while the line
     // stretches into the hairline the page began with.
     k('close', CLOSE.hairline[0], { ry: 6, light: 1, breath: 1 }, 'linear'),
-    k('close', CLOSE.hairline[1], { ry: 30, light: 1.5, breath: 0, hairline: 1, stage: 0 }),
+    k('close', mid(CLOSE.hairline, 0.35), { ry: 14, stage: 0.3, light: 1.175, breath: 0.65, hairline: 0.35 }, 'linear'),
+    k('close', CLOSE.hairline[1], { ry: 30, light: 1.5, breath: 0, hairline: 1, stage: 0 }, 'linear'),
   ];
 }
 
@@ -151,10 +152,10 @@ function mobileKeys(): KeySpec[] {
     k('design', mid(B.fit, 0.6), { head: 1 }, 'linear'),
     k('design', mid(B.fit, 0.7), { az: 86 }),
     k('design', mid(B.fit, 1), { az: 52, el: 14, dist: 11.0, headAlpha: 0 }),
-    k('design', lay(0.06), { az: 44, el: 20, dist: 11, tx: 0.06, ty: 0.02, tz: -0.06, fov: 30, sy: 0.3, rx: -6, head: 0, explode: 0 }),
-    k('design', lay(LAYERS.explode[1]), { explode: 1, az: 40, dist: 11.6 }),
-    k('design', lay(LAYERS.reassemble[0]), { explode: 1, az: 34, el: 21 }, 'linear'),
-    k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 30, el: 22, dist: 10.6 }),
+    k('design', lay(0.06), { az: 40, el: 30, dist: 11, tx: 0, ty: 0.02, tz: -0.06, fov: 30, sx: -0.08, sy: 0.3, rx: -6, head: 0, explode: 0 }),
+    k('design', lay(LAYERS.explode[1]), { explode: 1, az: 36, el: 32, dist: 11.4 }),
+    k('design', lay(LAYERS.reassemble[0]), { explode: 1, az: 32, el: 32 }, 'linear'),
+    k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 28, el: 30, dist: 10.6 }),
     k('loop', 0, { az: 196, el: 60, dist: 16.5, tx: 0, ty: 0, tz: 0, fov: 26, sx: 0, sy: 0.4, rx: 0, light: 1, breath: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.1), { glow: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.75), { glow: 5 }, 'linear'),
@@ -167,12 +168,13 @@ function mobileKeys(): KeySpec[] {
     k('loop', LOOP.nodes[4][1], { az: -150, el: 60, glow: 5, light: 1, breath: 0 }, 'linear'),
     k('loop', LOOP.handoff[0], { stage: 1, light: 1 }),
     k('loop', mid(LOOP.handoff, 0.6), { stage: 0, light: 1.6, glow: 2 }),
-    k('close', -0.02, { stage: 0, az: 34, el: 11, dist: 11.5, tx: 0, ty: 0, tz: 0, sx: 0, sy: 0.44, ry: -50, glow: 0, light: 1, breath: 1, mood: 1, floor: 0, fov: 26 }),
+    k('close', -0.02, { stage: 0, az: 34, el: 22, dist: 11.5, tx: 0, ty: 0, tz: 0, sx: -0.12, sy: 0.44, ry: -50, glow: 0, light: 1, breath: 1, mood: 1, floor: 0, fov: 26 }),
     k('close', 0.12, { stage: 1, ry: -36 }),
     // The device turns its light line toward us, then dissolves while the line
     // stretches into the hairline the page began with.
     k('close', CLOSE.hairline[0], { ry: 6, light: 1, breath: 1 }, 'linear'),
-    k('close', CLOSE.hairline[1], { ry: 30, light: 1.5, breath: 0, hairline: 1, stage: 0 }),
+    k('close', mid(CLOSE.hairline, 0.35), { ry: 14, stage: 0.3, light: 1.175, breath: 0.65, hairline: 0.35 }, 'linear'),
+    k('close', CLOSE.hairline[1], { ry: 30, light: 1.5, breath: 0, hairline: 1, stage: 0 }, 'linear'),
   ];
 }
 
@@ -184,12 +186,13 @@ const PAPER = '#F2F0EC';
 const GRAPHITE = '#26262A';
 const CHARCOAL = '#121213';
 
-function bgKeys(mobile: boolean): [Anchor, string][] {
+function bgKeys(mobile: boolean): [Anchor, string, 'cubic'?][] {
   const [d0, d1] = mobile ? DESIGN_TONE.mobile : DESIGN_TONE.desktop;
   return [
     [['hero', 0], PAPER],
     [['design', d0], PAPER],
-    [['design', d1], GRAPHITE],
+    // Cross the mid-greys quickly: the room is either clearly paper or clearly graphite.
+    [['design', d1], GRAPHITE, 'cubic'],
     [['app', APP.toPaper[0]], GRAPHITE],
     [['app', APP.toPaper[1]], PAPER],
     [['close', -0.02], PAPER],
@@ -203,7 +206,7 @@ function bgKeys(mobile: boolean): [Anchor, string][] {
 
 export interface Choreography {
   keys: Key[];
-  bg: { y: number; rgb: [number, number, number] }[];
+  bg: { y: number; rgb: [number, number, number]; ease?: 'cubic' }[];
 }
 
 type Resolve = (a: Anchor) => number | null;
@@ -228,8 +231,8 @@ export function buildChoreography(mobile: boolean, resolve: Resolve): Choreograp
     keys.push({ y: yy, pose, ease: s.ease ?? 'sine' });
   }
   const bg = bgKeys(mobile)
-    .map(([a, c]) => ({ y: resolve(a), rgb: hexToRgb(c) }))
-    .filter((b): b is { y: number; rgb: [number, number, number] } => b.y !== null)
+    .map(([a, c, ease]) => ({ y: resolve(a), rgb: hexToRgb(c), ease }))
+    .filter((b): b is { y: number; rgb: [number, number, number]; ease: 'cubic' | undefined } => b.y !== null)
     .sort((a, b) => a.y - b.y);
   return { keys, bg };
 }
@@ -279,8 +282,8 @@ export function bgAt(c: Choreography, y: number): string {
       const b = bg[i + 1];
       if (y >= a.y && y <= b.y) {
         const t = b.y > a.y ? (y - a.y) / (b.y - a.y) : 1;
-        // Linear, so sections that mirror the crossfade (app) can match it exactly.
-        const e = t;
+        // Linear by default, so sections that mirror the crossfade (app) can match it exactly.
+        const e = b.ease === 'cubic' ? (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) : t;
         rgb = [0, 1, 2].map((j) => Math.round(a.rgb[j] + (b.rgb[j] - a.rgb[j]) * e)) as [number, number, number];
         break;
       }
