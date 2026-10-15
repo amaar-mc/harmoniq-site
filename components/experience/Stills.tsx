@@ -38,20 +38,26 @@ function stationAt(mobile: boolean): Station | null {
 }
 
 export default function Stills() {
-  const [mobile, setMobile] = useState(false);
+  // Only ever mounted in the browser (the stills mode is chosen after mount).
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   const [station, setStation] = useState<Station | null>('hero');
+  // Only stills the visitor reaches (plus the next one) are requested.
+  const [wanted, setWanted] = useState<Set<Station>>(() => new Set<Station>(['hero', 'reveal']));
   const last = useRef<Station | null>('hero');
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
     const onMq = () => setMobile(mq.matches);
-    onMq();
     mq.addEventListener('change', onMq);
     const tick = () => {
       const s = stationAt(mq.matches);
       if (s !== last.current) {
         last.current = s;
         setStation(s);
+        if (s) {
+          const next = STATIONS[Math.min(STATIONS.length - 1, STATIONS.indexOf(s) + 1)];
+          setWanted((w) => (w.has(s) && w.has(next) ? w : new Set([...w, s, next])));
+        }
       }
     };
     gsap.ticker.add(tick);
@@ -68,11 +74,11 @@ export default function Stills() {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={`${set}-${s}`}
-          src={`/stills/${set}-${s}.webp`}
+          src={wanted.has(s) ? `/stills/${set}-${s}.webp` : undefined}
           alt=""
           data-on={station === s ? '1' : '0'}
-          loading={s === 'hero' ? 'eager' : 'lazy'}
           decoding="async"
+          fetchPriority={s === 'hero' ? 'high' : 'low'}
         />
       ))}
     </div>

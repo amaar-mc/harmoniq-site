@@ -64,7 +64,7 @@ page.on('console', (m) => {
 page.on('pageerror', (e) => logs.push(`pageerror: ${e.message}`));
 
 const t0 = Date.now();
-await page.goto(`${base}/${args.query ? `?${args.query}` : ''}`, { waitUntil: 'load' });
+await page.goto(`${base}/?${args.query ?? 'webgl=force'}`, { waitUntil: 'load' });
 if (!args.query?.includes('nowebgl')) {
   await page.waitForFunction(() => window.__director?.warm && window.__director?.intro >= 1, null, { timeout: 120000 });
 }
@@ -89,24 +89,17 @@ for (const { name, spec } of shots) {
   }, spec);
   // Let ScrollTrigger and the director catch up, then snap the damped pose.
   await page.waitForTimeout(250);
-  const f0 = await page.evaluate(() => {
+  // Snap the damped pose, then force a few fresh frames (unless the stage is hidden).
+  await page.evaluate(async () => {
     const d = window.__director;
-    if (!d) return 0;
+    if (!d) return;
     d.snap = true;
-    d.invalidate();
-    return d.frames;
+    const f0 = d.frames;
+    for (let i = 0; i < 300 && d.frames < f0 + 3 && d.target.stage > 0.001; i++) {
+      d.invalidate();
+      await new Promise((r) => setTimeout(r, 100));
+    }
   });
-  // Two fresh frames after the snap (SwiftShader can run at a few fps).
-  await page
-    .waitForFunction(
-      (f0) => {
-        const d = window.__director;
-        return !d || d.frames >= f0 + 2 || d.target.stage < 0.001;
-      },
-      f0,
-      { timeout: 20000 },
-    )
-    .catch(() => console.log('  (frame wait timed out)'));
   await page.waitForTimeout(Number(args.settle ?? 0.3) * 1000);
   await page.screenshot({ path: `${out}/${name}.png` });
   console.log(`${name} @ ${y}`);

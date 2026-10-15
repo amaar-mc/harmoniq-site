@@ -98,12 +98,12 @@ function desktopKeys(): KeySpec[] {
     k('design', mid(B.fit, 0.7), { az: 86 }),
     k('design', mid(B.fit, 1), { az: 52, el: 14, dist: 6.2, headAlpha: 0 }),
     // 03e Layers: exploded along clean axes, labels, reassembly.
-    k('design', lay(0.06), { az: 44, el: 19, dist: 4.9, tx: 0.08, ty: 0.02, tz: -0.06, fov: 29, sx: 0.24, sy: 0, rx: -6, head: 0, explode: 0 }),
-    k('design', lay(LAYERS.explode[1]), { explode: 1, az: 40, dist: 5.1 }),
+    k('design', lay(0.06), { az: 44, el: 19, dist: 5.6, tx: 0.08, ty: 0.02, tz: -0.06, fov: 29, sx: 0.2, sy: 0, rx: -6, head: 0, explode: 0 }),
+    k('design', lay(LAYERS.explode[1]), { explode: 1, az: 40, dist: 5.9 }),
     k('design', lay(LAYERS.reassemble[0]), { explode: 1, az: 34, el: 21 }, 'linear'),
-    k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 30, el: 22, dist: 4.9 }),
+    k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 30, el: 22, dist: 5.4 }),
     // 04 Loop: small, from above and behind; the loop is drawn around it.
-    k('loop', 0, { az: 196, el: 60, dist: 10.6, tx: 0, ty: 0, tz: 0, fov: 23, sx: -0.2, sy: -0.08, rx: 0, light: 1, breath: 0 }),
+    k('loop', 0, { az: 196, el: 60, dist: 12.6, tx: 0, ty: 0, tz: 0, fov: 23, sx: -0.2, sy: -0.08, rx: 0, light: 1, breath: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.1), { glow: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.75), { glow: 5 }, 'linear'),
     k('loop', LOOP.nodes[4][1], { az: 204, glow: 5 }, 'linear'),
@@ -115,6 +115,8 @@ function desktopKeys(): KeySpec[] {
     k('close', 0.12, { stage: 1, ry: -14 }),
     k('close', CLOSE.hairline[0], { ry: -52, light: 1, breath: 1 }, 'linear'),
     k('close', CLOSE.hairline[1], { ry: -70, light: 1.5, breath: 0, hairline: 1 }),
+    // The footer scrolls in: the device leaves with the page (one viewport = 2 NDC).
+    k('close', 1, { sy: 2.4 }, 'linear', 1),
   ];
 }
 
@@ -150,7 +152,7 @@ function mobileKeys(): KeySpec[] {
     k('design', lay(LAYERS.explode[1]), { explode: 1, az: 40, dist: 11.6 }),
     k('design', lay(LAYERS.reassemble[0]), { explode: 1, az: 34, el: 21 }, 'linear'),
     k('design', lay(LAYERS.reassemble[1]), { explode: 0, az: 30, el: 22, dist: 10.6 }),
-    k('loop', 0, { az: 196, el: 60, dist: 14, tx: 0, ty: 0, tz: 0, fov: 26, sx: 0, sy: 0.4, rx: 0, light: 1, breath: 0 }),
+    k('loop', 0, { az: 196, el: 60, dist: 16.5, tx: 0, ty: 0, tz: 0, fov: 26, sx: 0, sy: 0.4, rx: 0, light: 1, breath: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.1), { glow: 0 }),
     k('loop', mid(LOOP.nodes[0], 0.75), { glow: 5 }, 'linear'),
     k('loop', LOOP.nodes[4][1], { az: 204, glow: 5 }, 'linear'),
@@ -160,6 +162,7 @@ function mobileKeys(): KeySpec[] {
     k('close', 0.12, { stage: 1, ry: -14 }),
     k('close', CLOSE.hairline[0], { ry: -52, light: 1, breath: 1 }, 'linear'),
     k('close', CLOSE.hairline[1], { ry: -70, light: 1.5, breath: 0, hairline: 1 }),
+    k('close', 1, { sy: 2.44 }, 'linear', 1),
   ];
 }
 

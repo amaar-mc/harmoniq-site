@@ -158,6 +158,7 @@ export const LOOP = {
   demo: {
     button: 'Hear 40 Hz',
     playing: 'Playing',
+    stopped: 'Stopped',
     label: 'Demonstration',
     note: 'Five seconds of a soft chord with a 40 Hz pulse, at low volume.',
   },

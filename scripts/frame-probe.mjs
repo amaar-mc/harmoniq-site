@@ -15,7 +15,7 @@ const poses = JSON.parse(arg('poses', '[]'));
 mkdirSync(out, { recursive: true });
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await b.newPage({ viewport: { width: w, height: h }, isMobile: w < 768, hasTouch: w < 768 });
-await page.goto('http://localhost:3000/', { waitUntil: 'load' });
+await page.goto('http://localhost:3000/?webgl=force', { waitUntil: 'load' });
 await page.waitForFunction(() => window.__director?.warm && window.__director?.intro >= 1, null, { timeout: 120000 });
 await page.evaluate(([scene, p]) => {
   const el = document.querySelector(`[data-scene="${scene}"]`);

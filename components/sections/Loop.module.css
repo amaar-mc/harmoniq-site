@@ -698,8 +698,8 @@
   .section {
     --loop-cx: 50%;
     --loop-cy: 30svh;
-    --loop-w: 83.72vw;
-    --loop-h: 46vw;
+    --loop-w: 86vw;
+    --loop-h: 60vw;
   }
 
   .column,

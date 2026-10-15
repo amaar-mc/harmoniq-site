@@ -29,7 +29,7 @@ const PARTIALS: Array<[number, OscillatorType, number]> = [
   [3, 'sine', 0.05],
   [1, 'triangle', 0.16],
 ];
-const STOPPED = 'Stopped';
+const STOPPED = LOOP.demo.stopped;
 
 interface Playback {
   ctx: AudioContext;

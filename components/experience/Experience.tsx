@@ -15,11 +15,27 @@ import styles from './Experience.module.css';
 // The 3D stage loads after the hero text has painted (never blocks first paint).
 const StageCanvas = dynamic(() => import('./StageCanvas'), { ssr: false });
 
-function hasWebGL(): boolean {
-  if (new URLSearchParams(window.location.search).has('nowebgl')) return false;
+/**
+ * Live 3D only with a hardware-accelerated context. Software WebGL (no GPU,
+ * blocklisted drivers, headless audits) would render this scene at a few
+ * frames per second and block the main thread on shader compiles, so those
+ * visitors get the pre-rendered stills instead. `?webgl=force` overrides
+ * (screenshot tooling), `?nowebgl` forces the stills.
+ */
+function canRunStage(): boolean {
+  const q = new URLSearchParams(window.location.search);
+  if (q.has('nowebgl')) return false;
+  const force = q.get('webgl') === 'force';
   try {
     const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    const attrs = { failIfMajorPerformanceCaveat: !force };
+    const gl = (c.getContext('webgl2', attrs) || c.getContext('webgl', attrs)) as WebGLRenderingContext | null;
+    if (!gl) return false;
+    // Some browsers hand out a software context without flagging the caveat.
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? '');
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return force || !/swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer);
   } catch {
     return false;
   }
@@ -46,7 +62,7 @@ export default function Experience() {
 
   // Decide WebGL vs stills, then load the stage when the main thread is idle.
   useEffect(() => {
-    if (!hasWebGL()) {
+    if (!canRunStage()) {
       director.intro = 1;
       // Capability detection needs the browser, so it can only run after mount.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -213,16 +229,21 @@ export default function Experience() {
         const A = director.screen.lightLineA;
         const B = director.screen.lightLineB;
         if (h > 0.001 && A && B && director.ready) {
-          const cx = (A.x + B.x) / 2;
-          const cy = (A.y + B.y) / 2;
-          const base = Math.hypot(B.x - A.x, B.y - A.y);
-          const ang = Math.atan2(B.y - A.y, B.x - A.x);
+          // Ends travel from the light line's ends to the viewport edges while
+          // the line levels out: the light line becomes a full-width hairline.
           const e = sine(h);
-          const len = base + (window.innerWidth * 1.15 - base) * e;
-          const a = ang * (1 - e);
+          const vw = window.innerWidth;
+          const [L, R] = A.x <= B.x ? [A, B] : [B, A];
+          const cy = (L.y + R.y) / 2;
+          const x0 = L.x + (-4 - L.x) * e;
+          const x1 = R.x + (vw + 4 - R.x) * e;
+          const y0 = L.y + (cy - L.y) * e;
+          const y1 = R.y + (cy - R.y) * e;
+          const len = Math.hypot(x1 - x0, y1 - y0);
+          const a = Math.atan2(y1 - y0, x1 - x0);
           outro.style.opacity = Math.min(1, h * 5).toFixed(3);
           outro.style.width = `${len.toFixed(1)}px`;
-          outro.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0) rotate(${a.toFixed(4)}rad) translateX(-50%)`;
+          outro.style.transform = `translate3d(${x0.toFixed(1)}px, ${y0.toFixed(1)}px, 0) rotate(${a.toFixed(4)}rad)`;
           outro.style.boxShadow = `0 0 ${(10 * (1 - e) + 2).toFixed(1)}px rgba(234,242,255,${(0.55 * (1 - e) + 0.15).toFixed(2)})`;
         } else outro.style.opacity = '0';
       }

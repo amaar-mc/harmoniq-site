@@ -11,7 +11,10 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 
-const base = process.argv.includes('--base') ? process.argv[process.argv.indexOf('--base') + 1] : 'http://localhost:3000';
+const argOf = (k) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : undefined);
+const base = argOf('--base') ?? 'http://localhost:3000';
+// --only desktop-layers,mobile-hero regenerates just those stills.
+const only = argOf('--only')?.split(',');
 const out = resolve('public/stills');
 const tmp = resolve('.stills-tmp');
 mkdirSync(out, { recursive: true });
@@ -54,12 +57,14 @@ const browser = await chromium.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
 });
 for (const [set, cfg] of Object.entries(SETS)) {
+  if (only && !only.some((o) => o.startsWith(`${set}-`))) continue;
   const mobile = set === 'mobile';
   const page = await browser.newPage({ viewport: cfg.viewport, deviceScaleFactor: cfg.dpr, isMobile: mobile, hasTouch: mobile });
-  await page.goto(base, { waitUntil: 'load' });
+  await page.goto(`${base}/?webgl=force`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__director?.warm && window.__director?.intro >= 1, null, { timeout: 180000 });
-  await page.addStyleTag({ content: 'main, header, footer, .stage > :not(:first-child) { visibility: hidden !important; }' });
+  await page.addStyleTag({ content: 'main, main *, header, header *, footer, footer *, .stage > :not(:first-child) { visibility: hidden !important; }' });
   for (const [name, spec] of Object.entries(cfg.stations)) {
+    if (only && !only.includes(`${set}-${name}`)) continue;
     await page.evaluate((spec) => {
       const [scene, p] = spec.split(':');
       const el = document.querySelector(`[data-scene="${scene}"]`);
@@ -68,13 +73,16 @@ for (const [set, cfg] of Object.entries(SETS)) {
       window.__lenis.scrollTo(y, { immediate: true, force: true });
     }, spec);
     await page.waitForTimeout(300);
-    const f0 = await page.evaluate(() => {
+    // Snap the damped pose, then force a few fresh frames.
+    await page.evaluate(async () => {
       const d = window.__director;
       d.snap = true;
-      d.invalidate();
-      return d.frames;
+      const f0 = d.frames;
+      for (let i = 0; i < 300 && d.frames < f0 + 3; i++) {
+        d.invalidate();
+        await new Promise((r) => setTimeout(r, 100));
+      }
     });
-    await page.waitForFunction((f0) => window.__director.frames >= f0 + 3, f0, { timeout: 30000 });
     const png = `${tmp}/${set}-${name}.png`;
     await page.screenshot({ path: png });
     execFileSync('python3', ['-c', `from PIL import Image; Image.open(${JSON.stringify(png)}).convert('RGB').save(${JSON.stringify(`${out}/${set}-${name}.webp`)}, 'WEBP', quality=80, method=6)`]);

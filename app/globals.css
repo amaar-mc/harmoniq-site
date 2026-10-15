@@ -391,3 +391,13 @@ canvas {
   [data-scene='app'] { --len: 4.6; }
   [data-scene='close'] { --len: 2.4; }
 }
+
+/* Without JavaScript nothing paints the scroll-driven background: give the
+   dark sections their own ground so their text stays readable. */
+html:not(.js) [data-scene='loop'] {
+  background: var(--graphite);
+}
+
+html:not(.js) [data-scene='close'] {
+  background: var(--charcoal);
+}
