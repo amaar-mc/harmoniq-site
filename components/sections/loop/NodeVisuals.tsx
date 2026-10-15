@@ -86,7 +86,7 @@ export function InterpretVisual() {
   );
 }
 
-/** 03 Personalize: three settings glide to new values. */
+/** 03 Personalize: the music and 40 Hz settings glide to new values. */
 export function PersonalizeVisual() {
   return (
     <div className={`${s.figure} ${s.sliders}`} aria-hidden="true">

@@ -244,7 +244,7 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
     }
   }
 
-  // 03 Personalize: the three settings glide to new values.
+  // 03 Personalize: the music and 40 Hz settings glide to new values.
   {
     const [a, b] = N[2];
     const w = b - a;

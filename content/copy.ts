@@ -76,7 +76,7 @@ export const DESIGN = {
       id: 'contacts',
       index: '03',
       label: 'Contacts',
-      // PRODUCT: noninvasive EEG headband (dry contacts per the design brief).
+      // PRODUCT: noninvasive EEG headband. 'Dry contacts … No gel.' is the brief's own §5 storyboard wording.
       headline: 'Dry contacts listen across the forehead. No gel.',
       body: 'Champagne contacts sit in soft foam, low on the inner band, where the halo meets the skin.',
     },
@@ -118,7 +118,7 @@ export const LOOP = {
       id: 'sense',
       index: '01',
       title: 'Sense',
-      // PRODUCT: EEG headband; RESEARCH: continuous EEG history.
+      // PRODUCT: EEG headband; RESEARCH: continuous EEG history. Wording from the brief's §5 storyboard.
       body: 'Dry contacts read the brain’s electrical rhythm, continuously.',
     },
     {
@@ -154,7 +154,8 @@ export const LOOP = {
     eeg: 'EEG',
     now: 'now',
     forecast: 'forecast',
-    settings: ['Timing', 'Depth', 'Blend'],
+    // PRODUCT: music blended with personalized 40 Hz (the two things that adapt; no unstated parameters).
+    settings: ['Music', '40\u00A0Hz'],
     tone: '40\u00A0Hz',
   },
   demo: {
