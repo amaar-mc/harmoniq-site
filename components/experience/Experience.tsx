@@ -8,7 +8,8 @@ import { fetchBakedModel } from '@/lib/harmoniq/modelSource';
 import { gsap, ScrollTrigger } from '@/lib/motion/gsap';
 import { getScene, scenePos } from '@/lib/motion/scene';
 import { director } from './director';
-import { bgAt, buildChoreography, createPose, poseAt, segmentAt, type Anchor } from './poses';
+import { bgAt, buildChoreography, createPose, poseAt, type Anchor } from './poses';
+import type { Pose } from './director';
 import Stills from './Stills';
 import styles from './Experience.module.css';
 
@@ -112,8 +113,11 @@ export default function Experience() {
       return scenePos(el, a[1]) + (a[2] ?? 0) * window.innerHeight;
     };
     let choreo = buildChoreography(mqMobile.matches, resolve);
+    // Where the close un-pins: past it, the finished hairline leaves with the page.
+    let closeEndY = resolve(['close', 1]) ?? Infinity;
     const rebuild = () => {
       choreo = buildChoreography(mqMobile.matches, resolve);
+      closeEndY = resolve(['close', 1]) ?? Infinity;
       director.invalidate();
     };
     ScrollTrigger.addEventListener('refresh', rebuild);
@@ -123,7 +127,10 @@ export default function Experience() {
     const target = createPose();
     director.target = target;
     let lastBg = '';
-    let lastSeg = -1;
+    // Reduced motion: the pose that is on screen, and when the last cut happened.
+    const STATION: (keyof Pose)[] = ['az', 'el', 'dist', 'tx', 'ty', 'tz', 'fov', 'sx', 'sy', 'rx', 'ry', 'explode', 'head', 'lift'];
+    let onScreen: Pose | null = null;
+    let lastCutAt = -1;
     let cut = 1;
     let lastTime = 0;
 
@@ -153,14 +160,25 @@ export default function Experience() {
       const y = window.scrollY;
       director.time = time;
       poseAt(choreo, y, target, reduce);
+      // Reduced motion: no ambient breathing either (the light line holds steady).
+      if (reduce) target.breath = 0;
       if (director.override) Object.assign(target, director.override);
 
-      // Reduced motion: cut between stations through a short fade.
+      // Reduced motion: hold a station, then cut to the next one (no camera
+      // travel) through a short dip. Keys that change nothing never cut, and
+      // dips are at most one per 0.6 s, so fast scrolling cannot strobe.
       if (reduce) {
-        const seg = segmentAt(choreo, y);
-        if (seg !== lastSeg) {
-          if (lastSeg !== -1) cut = 0;
-          lastSeg = seg;
+        const held = onScreen;
+        const moved =
+          !held ||
+          STATION.some((f) => Math.abs(target[f] - held[f]) > (f === 'az' || f === 'el' || f === 'ry' || f === 'fov' ? 2 : 0.03));
+        if (moved) {
+          if (held && time - lastCutAt > 0.6) {
+            cut = 0;
+            lastCutAt = time;
+          }
+          onScreen = { ...target };
+          director.snap = true;
           director.invalidate();
         }
         if (cut < 1) {
@@ -204,7 +222,7 @@ export default function Experience() {
       const cur = director.current ?? target;
       const canvas = canvasRef.current;
       if (canvas) {
-        const o = cur.stage * director.intro * sine(cut);
+        const o = cur.stage * director.intro * (reduce ? 0.4 + 0.6 * sine(cut) : 1);
         canvas.style.opacity = o.toFixed(3);
         canvas.style.visibility = o > 0.001 ? 'visible' : 'hidden';
       }
@@ -212,12 +230,14 @@ export default function Experience() {
       // Giant word behind the device (reveal).
       const word = wordRef.current;
       if (word) {
-        const w = cur.word * director.intro;
+        const w = cur.word * director.intro * (reduce ? sine(cut) : 1);
         word.style.opacity = w.toFixed(3);
         if (w > 0.001) {
           const c = director.screen.deviceCentre;
-          const x = c ? c.x : window.innerWidth / 2;
-          const yy = c ? c.y : window.innerHeight / 2;
+          // Centred horizontally (it never crops mid-turn); vertically on the device.
+          const x = window.innerWidth / 2;
+          // Without a projected device (stills), use the reveal still's device height.
+          const yy = c ? c.y : window.innerHeight * (window.innerWidth < 768 ? 0.42 : 0.43);
           word.style.transform = `translate3d(${x.toFixed(1)}px, ${yy.toFixed(1)}px, 0) translate(-50%, -50%) scale(${(1.06 - 0.06 * cur.word).toFixed(4)})`;
         }
       }
@@ -231,17 +251,19 @@ export default function Experience() {
         if (h > 0.001 && A && B && director.ready) {
           // Ends travel from the light line's ends to the viewport edges while
           // the line levels out: the light line becomes a full-width hairline.
-          const e = sine(h);
+          // Reduced motion: the finished hairline fades in, it does not stretch.
+          const e = reduce ? 1 : sine(h);
           const vw = window.innerWidth;
+          const lift = Math.max(0, y - closeEndY);
           const [L, R] = A.x <= B.x ? [A, B] : [B, A];
           const cy = (L.y + R.y) / 2;
           const x0 = L.x + (-4 - L.x) * e;
           const x1 = R.x + (vw + 4 - R.x) * e;
-          const y0 = L.y + (cy - L.y) * e;
-          const y1 = R.y + (cy - R.y) * e;
+          const y0 = L.y + (cy - L.y) * e - lift;
+          const y1 = R.y + (cy - R.y) * e - lift;
           const len = Math.hypot(x1 - x0, y1 - y0);
           const a = Math.atan2(y1 - y0, x1 - x0);
-          outro.style.opacity = Math.min(1, h * 5).toFixed(3);
+          outro.style.opacity = (reduce ? sine(cut) * (h > 0.5 ? 1 : 0) : Math.min(1, h * 5)).toFixed(3);
           outro.style.width = `${len.toFixed(1)}px`;
           outro.style.transform = `translate3d(${x0.toFixed(1)}px, ${y0.toFixed(1)}px, 0) rotate(${a.toFixed(4)}rad)`;
           outro.style.boxShadow = `0 0 ${(10 * (1 - e) + 2).toFixed(1)}px rgba(234,242,255,${(0.55 * (1 - e) + 0.15).toFixed(2)})`;

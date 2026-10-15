@@ -32,7 +32,7 @@ const SETS = {
       contacts: 'design:0.5',
       fit: 'design:0.68',
       layers: 'design:0.88',
-      loop: 'loop:0.5',
+      loop: 'loop:0.2',
       close: 'close:0.5',
     },
   },
@@ -47,7 +47,7 @@ const SETS = {
       contacts: 'design:0.42',
       fit: 'design:0.66',
       layers: 'design:0.88',
-      loop: 'loop:0.5',
+      loop: 'loop:0.2',
       close: 'close:0.5',
     },
   },
@@ -84,7 +84,7 @@ for (const [set, cfg] of Object.entries(SETS)) {
       }
     });
     const png = `${tmp}/${set}-${name}.png`;
-    await page.screenshot({ path: png });
+    await page.screenshot({ path: png, timeout: 180000 });
     execFileSync('python3', ['-c', `from PIL import Image; Image.open(${JSON.stringify(png)}).convert('RGB').save(${JSON.stringify(`${out}/${set}-${name}.webp`)}, 'WEBP', quality=80, method=6)`]);
     console.log(`${set}-${name}.webp`);
   }

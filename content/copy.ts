@@ -5,7 +5,7 @@
  * (ORIGIN / RESEARCH / PRODUCT / MISSION). Lines without a source comment are
  * design description, interface labels or calls to action, and make no claim.
  *
- * Rules applied (brief §2): no outcomes, no clinical or regulatory status, no
+ * Rules applied (brief §2): no outcomes, no regulatory or medical status, no
  * unstated specs, no named delivery hardware, no light stimulation, no logos,
  * no statistics; "music-based sessions", "support", "explore".
  */
@@ -18,7 +18,7 @@ export const SITE = {
   title: 'Harmoniq: memory keeps time',
   // PRODUCT: EEG headband + companion app, music with personalized 40 Hz auditory stimulation, closed loop.
   description:
-    'A research-stage concept: an EEG-guided headband and companion app that blend music with personalized 40 Hz sound in a closed loop.',
+    'A research-stage concept: an EEG-guided headband and companion app that blend music with personalized 40\u00A0Hz sound in a closed loop.',
   // §2 REQUIRED FOOTER DISCLAIMER (verbatim).
   disclaimer:
     'Harmoniq is a research-stage concept. It is not a medical device, has not been evaluated by the FDA, and is not intended to diagnose, treat, cure, or prevent any disease. Product imagery shows a design render.',
@@ -42,7 +42,7 @@ export const HERO = {
   eyebrow: 'Harmoniq',
   headline: 'Memory keeps time.',
   // PRODUCT: noninvasive EEG headband; personalized 40 Hz auditory stimulation. ("listens" = reads EEG, RESEARCH.)
-  subline: 'An EEG-guided headband that listens to the brain, and answers with personalized 40 Hz sound.',
+  subline: 'An EEG-guided headband that listens to the brain, and answers with personalized 40\u00A0Hz sound.',
   status: 'Research-stage concept',
   scroll: 'Scroll',
 } as const;
@@ -51,7 +51,7 @@ export const REVEAL = {
   // Design statement; "instrument" in both senses (music: ORIGIN piano; sensing: PRODUCT EEG).
   headline: 'A quiet instrument for the mind.',
   // PRODUCT: headband + companion app blend music with personalized 40 Hz auditory stimulation in a closed loop.
-  body: 'A noninvasive headband and a companion app that blend music with personalized 40 Hz sound, in a closed loop.',
+  body: 'A noninvasive headband and a companion app that blend music with personalized 40\u00A0Hz sound, in a closed loop.',
 } as const;
 
 export const DESIGN = {
@@ -62,7 +62,8 @@ export const DESIGN = {
       index: '01',
       label: 'Halo',
       headline: 'One continuous sweep of satin titanium, shaped to the brow.',
-      body: 'From brow to ear the titanium never breaks. A single light line marks the band.',
+      // Design description (brief §3: one continuous band across the forehead, temple to temple).
+      body: 'From temple to temple, the titanium never breaks. A single light line marks the band.',
     },
     {
       id: 'crown',
@@ -96,10 +97,11 @@ export const DESIGN = {
   ],
   /** Exploded-view part labels (design description only). */
   parts: [
+    // Ordered as they read on screen in the exploded view (01 → 07).
     { anchor: 'crownTop', label: 'Knit crown' },
-    { anchor: 'titaniumSide', label: 'Titanium halo' },
+    { anchor: 'contact_0', label: 'Dry contacts' },
     { anchor: 'lightLine', label: 'Light line' },
-    { anchor: 'contactCentre', label: 'Dry contacts' },
+    { anchor: 'shellFront', label: 'Titanium halo' },
     { anchor: 'moduleL', label: 'Smoked-glass module' },
     { anchor: 'armL', label: 'Titanium arm' },
     { anchor: 'earRestL', label: 'Graphite ear rest' },
@@ -117,7 +119,7 @@ export const LOOP = {
       index: '01',
       title: 'Sense',
       // PRODUCT: EEG headband; RESEARCH: continuous EEG history.
-      body: "Dry contacts read the brain's electrical rhythm, continuously.",
+      body: 'Dry contacts read the brain’s electrical rhythm, continuously.',
     },
     {
       id: 'interpret',
@@ -138,7 +140,7 @@ export const LOOP = {
       index: '04',
       title: 'Deliver',
       // PRODUCT: blends music with personalized 40 Hz auditory stimulation.
-      body: '40 Hz sound, woven into music.',
+      body: '40\u00A0Hz sound, woven into music.',
     },
     {
       id: 'adapt',
@@ -153,14 +155,14 @@ export const LOOP = {
     now: 'now',
     forecast: 'forecast',
     settings: ['Timing', 'Depth', 'Blend'],
-    tone: '40 Hz',
+    tone: '40\u00A0Hz',
   },
   demo: {
-    button: 'Hear 40 Hz',
+    button: 'Hear 40\u00A0Hz',
     playing: 'Playing',
     stopped: 'Stopped',
     label: 'Demonstration',
-    note: 'Five seconds of a soft chord with a 40 Hz pulse, at low volume.',
+    note: 'Five seconds of a soft chord with a 40\u00A0Hz pulse, at low volume.',
   },
 } as const;
 
@@ -174,7 +176,7 @@ export const APP = {
     greeting: 'Good evening',
     title: 'Tonight',
     // PRODUCT: music-based sessions with 40 Hz.
-    session: 'Music + 40 Hz',
+    session: 'Music + 40\u00A0Hz',
     detail: 'Shaped by how today felt',
     tags: ['Calm', 'Familiar'],
     begin: 'Begin',
@@ -187,7 +189,7 @@ export const APP = {
     // ORIGIN-adjacent: the piece the founder imagines playing (brief §5, optional).
     nowPlaying: 'Embraceable You',
     artist: 'George Gershwin · solo piano',
-    tone: '40 Hz woven in',
+    tone: '40\u00A0Hz woven in',
     end: 'End session',
   },
   week: {
@@ -210,16 +212,17 @@ export const RESEARCH = {
     {
       index: '01',
       title: 'The question',
-      // ORIGIN: age nine, grandfather's memory faded, forgot my name, looked at me like a stranger.
-      body: 'I was nine when my grandfather’s memory began to fade. He forgot my name and looked at me like a stranger.',
-      // ORIGIN: 8+ years of classical and jazz piano.
-      aside: 'Eight years of classical and jazz piano run through everything that followed.',
+      // ORIGIN: age nine, the founder's grandfather; forgot my name, looked at me like a stranger.
+      // (The fading memory itself is left to the founder's own words in FOUNDER.)
+      body: 'I was nine, and it was my grandfather. He forgot my name and looked at me like a stranger.',
+      // ORIGIN: 8+ years of classical and jazz piano; music runs through all of this.
+      aside: 'More than eight years of classical and jazz piano run through everything that followed.',
     },
     {
       index: '02',
       title: 'The research',
       // RESEARCH: extended MIT's 2016 40 Hz gamma (GENUS) work; personalized 40 Hz auditory stimulation; causal TCN forecasting PAC.
-      body: 'Closed-loop EEG with personalized 40 Hz auditory stimulation, building on MIT’s 2016 gamma-stimulation research. A causal temporal-convolutional network reads continuous EEG and forecasts phase–amplitude coupling, so the sound can adapt in real time.',
+      body: 'Closed-loop EEG with personalized 40\u00A0Hz auditory stimulation, building on MIT’s 2016 gamma-stimulation research. A causal temporal-convolutional network reads continuous EEG and forecasts phase–amplitude coupling, so the sound can adapt in real time.',
       recognition: [
         // RESEARCH: recognition.
         '1st Place, Computational Biology & Bioinformatics, Synopsys Championship',

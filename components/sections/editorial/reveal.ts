@@ -1,6 +1,7 @@
 'use client';
 
 import { gsap, SplitText } from '@/lib/motion/gsap';
+import { requestRefresh } from '@/lib/motion/scene';
 
 /**
  * Editorial reveal helpers (Research, Founder, Close).
@@ -46,7 +47,12 @@ export function linesOnce(el: HTMLElement, { start = 'top 90%', delay = 0 }: Onc
       stagger: LINE_STAGGER,
       delay,
       scrollTrigger: { trigger: el, start, once: true },
-      onComplete: () => split.revert(),
+      onComplete: () => {
+        split.revert();
+        // The masked lines were slightly taller than the plain text: re-measure
+        // the page so later scrubbed scenes keep the right geometry.
+        requestRefresh();
+      },
     },
   );
   return split;

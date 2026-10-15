@@ -145,6 +145,8 @@
 
 .labelTitle {
   font-weight: 400;
+  /* Resting state; the active station's title turns paper (motion.ts). */
+  color: var(--stone-dark);
 }
 
 /* Leader ticks: a 1px stroke from the label toward its station. */
@@ -164,8 +166,6 @@
   border-radius: 999px;
   background: var(--signal);
   box-shadow: var(--glow);
-  opacity: 0;
-  visibility: hidden;
   will-change: transform;
 }
 
@@ -180,10 +180,15 @@
   border-radius: 3px;
   background: #f4f6f8;
   box-shadow: var(--glow);
-  opacity: 0;
-  visibility: hidden;
   pointer-events: none;
   will-change: transform, width;
+}
+
+/* Start states (the scroll timeline places and reveals them). */
+:global(html.js) .light,
+:global(html.js) .line {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -223,6 +228,9 @@
 .panel {
   grid-area: 1 / 1;
   align-self: start;
+}
+
+:global(html.js) .panel {
   opacity: 0;
 }
 
@@ -577,8 +585,12 @@
   align-items: center;
   gap: 14px 18px;
   margin-top: 4px;
-  pointer-events: auto;
-  visibility: hidden;
+}
+
+/* Hidden but focusable: still in the tab order outside Deliver (HearDemo scrolls
+   there on focus). The motion turns pointer events on only while it is shown. */
+:global(html.js) .demo {
+  pointer-events: none;
   opacity: 0;
 }
 
@@ -758,7 +770,7 @@
   }
 
   .labelIdx {
-    font-size: 10.5px;
+    font-size: 11.5px;
   }
 
   .dot {
@@ -787,7 +799,6 @@
 
   .panelBody {
     margin-top: 8px;
-    font-size: 16.5px;
     line-height: 1.45;
   }
 
@@ -892,5 +903,104 @@
 
   .demoBtn[data-playing] .demoFill {
     animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Without JavaScript: the first screen is the loop at rest (headline, the    */
+/* drawn loop around the device still, the intro); the five steps follow in   */
+/* flow with their finished readouts.                                         */
+/* -------------------------------------------------------------------------- */
+
+:global(html:not(.js)) .frame {
+  padding: 100svh var(--margin) clamp(80px, 14svh, 144px);
+}
+
+/* Script-only: the travelling light, the hand-off line, the audio demo. */
+:global(html:not(.js)) .light,
+:global(html:not(.js)) .line,
+:global(html:not(.js)) .demo {
+  display: none;
+}
+
+:global(html:not(.js)) .column {
+  position: static;
+  width: auto;
+}
+
+:global(html:not(.js)) .stack {
+  display: block;
+}
+
+/* The intro keeps its place beside the loop, on the first screen. */
+:global(html:not(.js)) .intro {
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--margin) + 8 * (var(--col) + var(--gutter)));
+  top: calc(var(--loop-cy) - var(--loop-h) / 2 - 5px);
+  width: calc(4 * var(--col) + 3 * var(--gutter));
+}
+
+:global(html:not(.js)) .panels {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  column-gap: var(--gutter);
+}
+
+/* Each step spans four rows (index, title, body, readout) of the list's grid
+   (a subgrid), so the readouts of a row line up whatever their text's length. */
+:global(html:not(.js)) .panel {
+  grid-area: auto;
+  grid-row: span 4;
+  display: grid;
+  grid-template-rows: subgrid;
+  padding-bottom: clamp(64px, 10svh, 112px);
+}
+
+:global(html:not(.js)) .panel > * {
+  align-self: start;
+}
+
+/* Ripples hold still as faint rings (as under reduced motion). */
+:global(html:not(.js)) .ripple {
+  animation: none;
+  inset: -6px -5px;
+  opacity: 0.32;
+}
+
+:global(html:not(.js)) .ripple:nth-child(2) {
+  inset: -12px -10px;
+  opacity: 0.2;
+}
+
+:global(html:not(.js)) .ripple:nth-child(3) {
+  inset: -18px -14px;
+  opacity: 0.1;
+}
+
+@media (max-width: 767px) {
+  /* The loop keeps its place at the top; headline and intro flow under it. */
+  :global(html:not(.js)) .frame {
+    padding-top: max(55svh, calc(var(--loop-cy) + var(--loop-h) / 2 + 56px));
+  }
+
+  :global(html:not(.js)) .head,
+  :global(html:not(.js)) .intro {
+    position: static;
+    width: auto;
+    max-width: none;
+  }
+
+  :global(html:not(.js)) .intro {
+    margin-top: 18px;
+    padding-top: 0;
+    max-width: 30ch;
+  }
+
+  :global(html:not(.js)) .panels {
+    margin-top: 72px;
+  }
+
+  :global(html:not(.js)) .panel {
+    padding-bottom: 64px;
   }
 }

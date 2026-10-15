@@ -29,6 +29,11 @@
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+/* Start states (the scrubbed timeline reveals them); without JS all is shown. */
+:global(html.js) .header,
+:global(html.js) .beat {
   opacity: 0;
 }
 
@@ -50,7 +55,6 @@
 
 .beat {
   grid-area: 1 / 1;
-  opacity: 0;
 }
 
 .meta {
@@ -106,10 +110,6 @@
   .headline {
     font-size: clamp(28px, 3.3vw, 36px);
   }
-
-  .body {
-    font-size: 16px;
-  }
 }
 
 @media (max-width: 767px) {
@@ -142,7 +142,6 @@
 
   .body {
     margin-top: 14px;
-    font-size: 16px;
   }
 }
 
@@ -167,5 +166,41 @@
   .body {
     margin-top: 10px;
     font-size: 15px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Without JavaScript: the placards stack one after another in the column     */
+/* (beside the device's still on desktop, see globals.css), and the layers    */
+/* placard shows its parts list under its text.                               */
+/* -------------------------------------------------------------------------- */
+
+:global(html:not(.js)) .layout {
+  position: relative;
+  inset: auto;
+  min-height: 100svh;
+  padding-top: calc(var(--nav-h) + clamp(48px, 10svh, 112px));
+  padding-bottom: clamp(72px, 14svh, 144px);
+}
+
+:global(html:not(.js)) .stack {
+  row-gap: clamp(56px, 9svh, 96px);
+}
+
+:global(html:not(.js)) .beat,
+:global(html:not(.js)) .cell > * {
+  grid-area: auto;
+}
+
+@media (max-width: 767px) {
+  /* The device's still sits above (globals.css). */
+  :global(html:not(.js)) .layout {
+    min-height: 0;
+    padding-top: 28px;
+    padding-bottom: 72px;
+  }
+
+  :global(html:not(.js)) .stack {
+    row-gap: 48px;
   }
 }

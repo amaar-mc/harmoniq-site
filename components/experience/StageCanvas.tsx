@@ -20,6 +20,15 @@ import { createPose } from './poses';
  * page costs nothing and the stage pauses entirely when it is not visible.
  */
 
+// react-three-fiber 9 still constructs THREE.Clock, deprecated since three
+// r183; nothing here can act on it, so that one notice is dropped and every
+// other three.js message passes through unchanged.
+THREE.setConsoleFunction((type: string, message: string, ...params: unknown[]) => {
+  if (type === 'warn' && typeof message === 'string' && message.startsWith('THREE.Clock: This module has been deprecated')) return;
+  const fn = (console as unknown as Record<string, (...a: unknown[]) => void>)[type] ?? console.log;
+  fn(message, ...params);
+});
+
 const DEG = Math.PI / 180;
 const FIELDS = Object.keys(createPose()) as (keyof Pose)[];
 
@@ -315,6 +324,79 @@ function applyRig(C: Pose, refs: StageRefs, rest: boolean) {
   rig.updateMatrixWorld(true);
 }
 
+/** Up to 64 evenly strided local-space vertices per device mesh (glows excluded), for the screen bounds. */
+const BOUNDS_SAMPLES = 64;
+const boundsSamples = new WeakMap<HarmoniqModel, { mesh: THREE.Mesh; pts: Float32Array }[]>();
+const pv = new THREE.Matrix4();
+const mvp = new THREE.Matrix4();
+
+function samplesFor(model: HarmoniqModel) {
+  const cached = boundsSamples.get(model);
+  if (cached) return cached;
+  const list: { mesh: THREE.Mesh; pts: Float32Array }[] = [];
+  model.group.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || m.name === 'lightGlow' || m.name === 'contactGlow') return;
+    const pos = m.geometry.getAttribute('position');
+    if (!pos || pos.count === 0) return;
+    const n = Math.min(BOUNDS_SAMPLES, pos.count);
+    const stride = n > 1 ? (pos.count - 1) / (n - 1) : 0;
+    const pts = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const j = Math.round(i * stride);
+      pts[i * 3] = pos.getX(j);
+      pts[i * 3 + 1] = pos.getY(j);
+      pts[i * 3 + 2] = pos.getZ(j);
+    }
+    list.push({ mesh: m, pts });
+  });
+  boundsSamples.set(model, list);
+  return list;
+}
+
+/**
+ * Screen-space bounding rect of the device as rendered this frame (exploded
+ * offsets included), written to `director.screen.boundsMin` / `boundsMax`.
+ * Overlays use it as a keep-out so their text never sits on the metal.
+ */
+function projectBounds(model: HarmoniqModel, camera: THREE.PerspectiveCamera, size: { width: number; height: number }) {
+  // setExplode moved the parts after the rig's matrix update.
+  model.group.updateMatrixWorld(true);
+  pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const { mesh, pts } of samplesFor(model)) {
+    if (!mesh.visible) continue;
+    const e = mvp.multiplyMatrices(pv, mesh.matrixWorld).elements;
+    for (let i = 0; i < pts.length; i += 3) {
+      const x = pts[i];
+      const y = pts[i + 1];
+      const z = pts[i + 2];
+      const w = e[3] * x + e[7] * y + e[11] * z + e[15];
+      if (w <= 1e-6) continue;
+      const nx = (e[0] * x + e[4] * y + e[8] * z + e[12]) / w;
+      const ny = (e[1] * x + e[5] * y + e[9] * z + e[13]) / w;
+      if (nx < x0) x0 = nx;
+      if (nx > x1) x1 = nx;
+      if (ny < y0) y0 = ny;
+      if (ny > y1) y1 = ny;
+    }
+  }
+  const out = director.screen;
+  const lo = out.boundsMin ?? (out.boundsMin = { x: 0, y: 0, visible: false });
+  const hi = out.boundsMax ?? (out.boundsMax = { x: 0, y: 0, visible: false });
+  const ok = x0 <= x1 && y0 <= y1;
+  // NDC y points up, CSS y down: the top edge is the largest NDC y.
+  lo.x = ok ? (x0 * 0.5 + 0.5) * size.width : 0;
+  lo.y = ok ? (-y1 * 0.5 + 0.5) * size.height : 0;
+  hi.x = ok ? (x1 * 0.5 + 0.5) * size.width : 0;
+  hi.y = ok ? (-y0 * 0.5 + 0.5) * size.height : 0;
+  lo.visible = ok;
+  hi.visible = ok;
+}
+
 function project(
   model: HarmoniqModel,
   refs: StageRefs,
@@ -322,6 +404,7 @@ function project(
   size: { width: number; height: number },
   v: THREE.Vector3,
 ) {
+  projectBounds(model, camera, size);
   const root = model.group;
   const out = director.screen;
   const set = (name: string, world: THREE.Vector3) => {

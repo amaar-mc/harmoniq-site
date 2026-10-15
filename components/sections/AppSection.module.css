@@ -86,3 +86,20 @@
     margin-top: 12px;
   }
 }
+
+/* Without JS the frame no longer pins: keep it one screen tall on desktop, so
+   the phones' room (a size container) still has a height to fit them to. */
+@media (min-width: 768px) {
+  :global(html:not(.js)) .scene > .frame {
+    height: 100svh;
+  }
+}
+
+/* Without JS (phones): the screens stack, so the room grows with them. */
+@media (max-width: 767px) {
+  :global(html:not(.js)) .stageWrap {
+    flex: none;
+    container-type: inline-size;
+    margin-bottom: 72px;
+  }
+}

@@ -140,13 +140,99 @@ crops and the generator code. The fixes it drove: the plan curve, gasket proport
 roll self-intersection, the glass units bug, back-face-culled contact glow, contact-shadow plane
 edges, tangent-less anisotropy faceting, the halo-to-arm seam, and the preset framings.
 
-## 8. Open questions for the checkpoint
+## 8. Checkpoint questions (decided)
 
-- **Forked temple.** The board's side profile can also be read as two branches per side: a
-  smoked rail from the glass into the ear hook, above a separate slotted blade. The brief
-  describes one slotted titanium arm with a graphite ear rest, which is what's built. A forked
-  temple is an easy add if preferred.
-- **Module height.** The board's module looks taller than the crown at the temple. The glass
-  is kept slim (12.5 mm) so the titanium sweep stays the hero line.
-- **Crown volume.** The crown rises 9.5 mm at the centre (the brief guide says ~6, the board looks
-  like ~12).
+- **Forked temple: no.** The board's side profile can also be read as two branches per side.
+  The brief describes one slotted titanium arm with a graphite ear rest, which is what's built.
+- **Module height: slim.** The board's module looks taller than the crown at the temple. The
+  glass stays at 12.5 mm so the titanium sweep remains the hero line.
+- **Crown volume: 9.5 mm.** Between the brief's ~6 mm guide and the board's ~12 mm.
+
+---
+
+## 9. The site
+
+### Story and structure
+
+One idea per screen, carried by one object. The device never leaves the page until the app
+section, and comes back for the close. Eight scenes, in scroll order:
+
+| # | Scene | What the device does | Ground |
+|---|---|---|---|
+| 01 | Hero: "Memory keeps time." | A breathing hairline gathers into the light line; the device appears on a warm floor at three-quarters. | paper |
+| 02 | Reveal: "A quiet instrument for the mind." | Lifts off the floor, turns to face us, the camera pushes in; a giant faint "Harmoniq" sits behind it. | paper |
+| 03 | Design story (5 beats) | Halo (low three-quarter, a highlight sweeps the titanium), crown (from above), contacts (inside the band, warming one by one), fit (side profile, a construction-line head draws itself), layers (exploded along clean axes with projected labels, then reassembled). | paper → graphite |
+| 04 | Closed loop | Small, inside a stadium loop, orbiting once while a traveling light runs the five steps: Sense (contacts warm), Interpret (a highlight runs the titanium), Personalize, Deliver (the light line turns into view and breathes), Adapt (home). The light finally leaves the loop as a line. | graphite |
+| 05 | Interface concept | The line lands in the in-session phone's waveform; three HTML phones; the room turns to paper. | graphite → paper |
+| 06 | Research | Four chapters, recognition as a quiet text list. | paper |
+| 07 | Founder | One quote. | paper |
+| 08 | Close: "For every name worth remembering." | Turns its light line toward us on charcoal, then dissolves while the line stretches into a full-width hairline, the hairline the page began with. | charcoal |
+
+### Choreography
+
+- **Pure function of scroll.** Camera and device are keyframes anchored to scene progress
+  (`components/experience/poses.ts`), eased per segment and sampled by `poseAt(scrollY)`. The
+  stage only damps toward the sampled pose (Lenis already smooths the scroll), so a jump, a
+  fast fling or scrolling back always lands on the same frame. Text reveals are scrubbed GSAP
+  timelines over the same progress values (`components/experience/timeline.ts` is the shared
+  map).
+- **Spherical camera.** Moves are orbits (azimuth, elevation, distance around a target) plus a
+  screen-space shift, so the device can sit beside a copy column without changing perspective.
+- **Moods.** Two studio environments (light and dark) are rendered once; the switch happens at
+  the bottom of an intensity dip timed with the background crossfade, so it is never seen.
+- **The giant word** is HTML above the canvas with `mix-blend-mode: darken`: the device is always
+  darker than the word, so the word reads as if it were behind the device.
+- **One signal.** The light line on the hardware becomes the traveling light in the loop diagram,
+  the hand-off line, the session waveform in the app (synced to the same breathing), and the
+  closing hairline.
+
+### Craft rules kept
+
+- Inter only, display weights 200–300 with optical size; eyebrows 11.5px / 0.32em; tabular index
+  numbers 01–05; 1px hairlines; stadium buttons and chips; champagne only as a small accent.
+- Nothing flashes: the 40 Hz is only ever heard (an optional, tap-only five-second
+  demonstration at capped volume) or drawn as a calm line. Breathing runs at 5.2 s, ripples
+  at 7.2 s.
+- All copy in `content/copy.ts`, each factual line annotated with its source fact; the required
+  disclaimer is in the footer verbatim.
+
+### Performance
+
+- **Baked model.** The generator runs offline (`scripts/bake-model.mjs`); the site parses a
+  1.5 MB bake (≈0.8 MB gzipped) in about 0.4 s instead of generating geometry and ray-casting AO
+  for 8–15 s.
+- **Render on demand** (`frameloop="never"`), paused while the stage is off screen; shaders
+  compiled with `compileAsync` before the first visible frame.
+- **Adaptive quality:** pixel ratio 2 → 1.5 → 1, then opaque glass, if frames stay slow.
+- **Lazy timelines:** each section's scroll timeline builds in its own task as it nears the
+  viewport.
+- **Software WebGL gets stills.** Without a GPU this scene renders at a few frames per second
+  and blocks the main thread on shader compiles, so those visitors (and headless audits) get
+  pre-rendered stills of each station instead.
+
+### Judgement calls
+
+- **Single slotted arm** (no forked temple), **slim glass module**, **crown rise 9.5 mm** (see §8).
+- **Crown on mobile** keeps its own placard inside the halo camera beat rather than being merged
+  into one block, so every line of copy survives at 390 px.
+- **Contacts beat** looks into the band from behind and above, with the whole band to the right
+  of the copy column; the room darkens during the turn in, and the copy waits until the camera
+  has arrived.
+- **Reveal** faces the device from slightly above, so it reads as a headband (crown, modules,
+  light line) rather than a flat bar, and the turn starts as the hero un-pins.
+- **Exploded labels** sit in two columns outside the projected device bounds, so only 1 px
+  leaders cross the metal; parts are numbered in the order they read on screen.
+- **Ending:** the device dissolves while its light line becomes the closing hairline, which then
+  leaves with the page as the footer arrives.
+
+### Review and verification
+
+- **Jury round.** Six independent critics (desktop composition, mobile composition, typography,
+  choreography, story and brand, claims and accessibility) reviewed every beat's screenshots
+  and the code; a chair verified, deduplicated and ranked their findings. The ten kept fixes
+  (contacts and fit framing, exploded-label placement, keyboard access to the demo, reduced
+  motion, the ending, the reveal turn, type hygiene, loop label contrast, the loop orbit, and
+  copy that drifted from its sources) were implemented and re-shot.
+- **Verification.** Fast-scroll stability (fresh jump vs. after rapid wheel passes, scroll back
+  up), reduced motion, no-WebGL stills, no-JavaScript layout, keyboard and axe checks, the
+  audio demo, flashing, console, and the mandatory word and claims audit.

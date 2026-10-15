@@ -75,3 +75,15 @@
     font-size: 13.5px;
   }
 }
+
+/* Without JS there are no projected labels: the list shows under the layers text. */
+:global(html:not(.js)) .wrap {
+  position: relative;
+  width: auto;
+  height: auto;
+  margin: clamp(24px, 3.6svh, 36px) 0 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  max-width: 36ch;
+}

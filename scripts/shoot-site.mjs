@@ -101,7 +101,7 @@ for (const { name, spec } of shots) {
     }
   });
   await page.waitForTimeout(Number(args.settle ?? 0.3) * 1000);
-  await page.screenshot({ path: `${out}/${name}.png` });
+  await page.screenshot({ path: `${out}/${name}.png`, timeout: 180000 });
   console.log(`${name} @ ${y}`);
 }
 if (logs.length) console.log('console:\n' + [...new Set(logs)].join('\n'));

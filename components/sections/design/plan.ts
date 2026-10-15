@@ -1,4 +1,4 @@
-import { DESIGN_BEATS, LAYERS, type Range } from '@/components/experience/timeline';
+import { CONTACTS_ARRIVE, DESIGN_BEATS, DESIGN_TONE, LAYERS, type Range } from '@/components/experience/timeline';
 
 /**
  * Text choreography for 03 Design story, derived from the shared ranges in
@@ -7,7 +7,8 @@ import { DESIGN_BEATS, LAYERS, type Range } from '@/components/experience/timeli
  * Each placard reveals just after its beat starts and leaves just before it
  * ends, so two placards are never on screen together. The last paper-toned
  * placard (crown) is gone before the background starts turning to graphite,
- * and the first graphite placard (contacts) enters once it has turned.
+ * and the first graphite placard (contacts) waits until the room has turned
+ * and the camera has arrived inside the band.
  *
  * Mobile keeps all five placards: the crown has no camera beat of its own
  * there, so its placard takes the second part of the halo beat.
@@ -37,8 +38,6 @@ export interface DesignPlan {
   list: { textOut: Range; in: Range; out: Range };
 }
 
-/** Half-width of the background crossfade around the crown → contacts boundary. */
-const TONE_HALF = 0.02;
 /** Keep paper text clear of the crossfade by this much. */
 const TONE_GUARD = 0.004;
 /** Mobile: the halo beat hands over to the crown placard at this fraction of its range. */
@@ -70,15 +69,14 @@ const ORDER: BeatId[] = ['halo', 'crown', 'contacts', 'fit', 'layers'];
 export function designPlan(layout: Layout): DesignPlan {
   const t = TIMING[layout];
   const s = spans(layout);
-  const boundary = s.contacts[0];
-  const tone: Range = rg(boundary - TONE_HALF, boundary + TONE_HALF);
+  const tone: Range = rg(...DESIGN_TONE[layout]);
 
   const beats = ORDER.map((id): BeatPlan => {
     const [a, b] = s[id];
     let inStart = a + t.delay;
     let outEnd = b - t.outGap;
     if (id === 'crown') outEnd = Math.min(outEnd, tone[0] - TONE_GUARD);
-    if (id === 'contacts') inStart = Math.max(inStart, tone[1] - TONE_GUARD);
+    if (id === 'contacts') inStart = Math.max(inStart, tone[1] - TONE_GUARD, a + CONTACTS_ARRIVE * (b - a));
     return { id, range: [a, b], in: rg(inStart, inStart + t.inDur), out: rg(outEnd - t.outDur, outEnd) };
   });
 

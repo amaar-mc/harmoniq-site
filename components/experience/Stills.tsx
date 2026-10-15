@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from '@/lib/motion/gsap';
-import { getScene, sceneProgress } from '@/lib/motion/scene';
-import { DESIGN_BEATS } from './timeline';
+import { getScene, scenePos, sceneProgress } from '@/lib/motion/scene';
+import { DESIGN_BEATS, DESIGN_TONE } from './timeline';
 import styles from './Experience.module.css';
 
 /**
@@ -21,9 +21,14 @@ function stationAt(mobile: boolean): Station | null {
   const design = p('design');
   if (!(design >= 0)) return p('reveal') < 0.15 ? 'hero' : 'reveal';
   if (design <= 1) {
-    const beats = mobile ? { ...DESIGN_BEATS.mobile, crown: [0.12, 0.25] as const } : DESIGN_BEATS.desktop;
+    // Stills switch to the graphite contacts view mid-way through the background
+    // crossfade, so the still and the page ground change together.
+    const tone = mobile ? DESIGN_TONE.mobile : DESIGN_TONE.desktop;
+    const toneMid = (tone[0] + tone[1]) / 2;
+    const base = mobile ? { ...DESIGN_BEATS.mobile, crown: [0.12, 0.25] as const } : DESIGN_BEATS.desktop;
     // On mobile the crown shares the halo camera beat; show the top view in its second half.
-    const order: Station[] = mobile ? ['halo', 'crown', 'contacts', 'fit', 'layers'] : ['halo', 'crown', 'contacts', 'fit', 'layers'];
+    const beats = { ...base, contacts: [toneMid, base.contacts[1]] as const };
+    const order: Station[] = ['halo', 'crown', 'contacts', 'fit', 'layers'];
     let current: Station = 'halo';
     for (const s of order) {
       const r = (beats as Record<string, readonly [number, number]>)[s];
@@ -34,7 +39,8 @@ function stationAt(mobile: boolean): Station | null {
   const loop = p('loop');
   if (loop < -0.15) return 'layers';
   if (loop < 0.9) return 'loop';
-  return p('close') > -0.05 ? 'close' : null;
+  // Mid-way through the paper → charcoal crossfade (close −0.02 → 0.1).
+  return p('close') > 0.04 ? 'close' : null;
 }
 
 export default function Stills() {
@@ -44,12 +50,21 @@ export default function Stills() {
   // Only stills the visitor reaches (plus the next one) are requested.
   const [wanted, setWanted] = useState<Set<Station>>(() => new Set<Station>(['hero', 'reveal']));
   const last = useRef<Station | null>('hero');
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
     const onMq = () => setMobile(mq.matches);
     mq.addEventListener('change', onMq);
+    let lift = -1;
     const tick = () => {
+      // Once the close un-pins, its still leaves with the page (as the live device does).
+      const close = getScene('close');
+      const l = close ? Math.max(0, window.scrollY - scenePos(close, 1)) : 0;
+      if (l !== lift && rootRef.current) {
+        lift = l;
+        rootRef.current.style.transform = l ? `translate3d(0, ${-l}px, 0)` : '';
+      }
       const s = stationAt(mq.matches);
       if (s !== last.current) {
         last.current = s;
@@ -69,7 +84,7 @@ export default function Stills() {
 
   const set = mobile ? 'mobile' : 'desktop';
   return (
-    <div className={styles.stills}>
+    <div ref={rootRef} className={styles.stills}>
       {STATIONS.map((s) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img

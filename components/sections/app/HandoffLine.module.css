@@ -12,9 +12,17 @@
 
 .line {
   z-index: 15;
+  will-change: transform, opacity;
+}
+
+/* Start state (the scroll timeline flies it in); without JS it has nowhere to go. */
+:global(html.js) .line {
   opacity: 0;
   visibility: hidden;
-  will-change: transform, opacity;
+}
+
+:global(html:not(.js)) .line {
+  display: none;
 }
 
 /* An invisible twin at the exact rest position: centred in the 100svh frame. */

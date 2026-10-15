@@ -11,27 +11,61 @@ import s from './ExplodedLabels.module.css';
 
 /**
  * Exploded-view callouts (desktop). Each part gets a dot on its projected
- * anchor, a 1px leader running away from the device centre with a short
- * horizontal tail, and an HTML label. Positions are read from
- * `director.screen` after every rendered frame and written straight to the
- * DOM (no React state per frame). Visibility is scrubbed by scroll.
- * Decorative: the same parts are listed for assistive tech in the placard.
+ * anchor, a 1px leader and an HTML label. Labels are set on the graphite,
+ * never on the device: they stand in two columns either side of the device's
+ * screen rect (`director.screen.boundsMin` / `boundsMax`, inflated by KEEP),
+ * each column reading in part order, top to bottom. A label that cannot stand
+ * in its column (the copy placard, the viewport edge, or a leader that would
+ * cross another) moves to a row above or below the device on a vertical
+ * leader. Only the 1px leaders cross the metal.
+ *
+ * Positions are read from `director.screen` after every rendered frame and
+ * written straight to the DOM (no React state per frame). Visibility is
+ * scrubbed by scroll. Decorative: the same parts are listed for assistive
+ * tech in the placard.
  */
 
+type Slot = 'left' | 'right' | 'above' | 'below';
+
 interface Item {
+  i: number;
+  on: boolean;
   ax: number;
   ay: number;
-  side: 1 | -1;
-  ex: number;
-  ey: number;
-  y: number;
-  /** Tail + gap + label width: the run beyond the elbow that other leaders must not cut. */
-  run: number;
+  w: number;
   h: number;
-  on: boolean;
+  slot: Slot;
+  /** Elbow: where the leader turns into the horizontal tail. Also the label's centre line. */
+  ex: number;
+  y: number;
+  /** Direction of the tail and label from the elbow. */
+  side: 1 | -1;
 }
 
+interface Box {
+  l: number;
+  r: number;
+  t: number;
+  b: number;
+}
+
+/** Clearance between the device's screen rect and any label (px). */
+const KEEP = 14;
+/** Vertical space between stacked labels (px). */
+const SPACING = 10;
+/** Tail end → text (px). */
+const GAP = 9;
+/** Shortest horizontal run from an anchor to its column's elbow (px). */
+const MIN_RUN = 10;
+/** A leader must pass at least this far from another part's dot (px). */
+const DOT_CLEAR = 9;
+/** Steepening of a leader that grazes a neighbour's dot, per step and at most (px of label height). */
+const SPREAD_STEP = 6;
+const MAX_SPREAD = 60;
+
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const overlaps = (p: Box, q: Box, m = 0) => p.l < q.r + m && p.r > q.l - m && p.t < q.b + m && p.b > q.t - m;
 
 function segmentsCross(ax: number, ay: number, bx: number, by: number, cx: number, cy: number, dx: number, dy: number) {
   const d1 = (dx - cx) * (ay - cy) - (dy - cy) * (ax - cx);
@@ -41,27 +75,38 @@ function segmentsCross(ax: number, ay: number, bx: number, by: number, cx: numbe
   return d1 * d2 < 0 && d3 * d4 < 0;
 }
 
-/** Does segment a→b pass through the rectangle (sampled; segments here are short)? */
-function segmentHitsRect(ax: number, ay: number, bx: number, by: number, l: number, r: number, t: number, b: number) {
-  for (let s = 0; s <= 16; s++) {
-    const x = ax + ((bx - ax) * s) / 16;
-    const y = ay + ((by - ay) * s) / 16;
-    if (x > l && x < r && y > t && y < b) return true;
+/** Does segment a→b pass through the rectangle (Liang–Barsky)? */
+function segmentHitsRect(ax: number, ay: number, bx: number, by: number, r: Box) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  let t0 = 0;
+  let t1 = 1;
+  const edges: [number, number][] = [
+    [-dx, ax - r.l],
+    [dx, r.r - ax],
+    [-dy, ay - r.t],
+    [dy, r.b - ay],
+  ];
+  for (const [p, q] of edges) {
+    if (p === 0) {
+      if (q < 0) return false;
+      continue;
+    }
+    const t = q / p;
+    if (p < 0) t0 = Math.max(t0, t);
+    else t1 = Math.min(t1, t);
+    if (t0 > t1) return false;
   }
-  return false;
+  return true;
 }
 
-/** Do two callouts (anchor → elbow → tail → label) intersect or nearly touch? */
-function leadersCross(p: Item, q: Item) {
-  if (segmentsCross(p.ax, p.ay, p.ex, p.y, q.ax, q.ay, q.ex, q.y)) return true;
-  // Each callout's tail + label as a band: the other's radial segment must stay clear of it.
-  const band = (o: Item) => {
-    const end = o.ex + o.side * o.run;
-    return [Math.min(o.ex, end) - 2, Math.max(o.ex, end) + 2, o.y - o.h / 2 - 4, o.y + o.h / 2 + 4] as const;
-  };
-  return segmentHitsRect(q.ax, q.ay, q.ex, q.y, ...band(p)) || segmentHitsRect(p.ax, p.ay, p.ex, p.y, ...band(q));
+function distToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  const t = l2 > 0 ? clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1) : 0;
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
 }
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 export default function ExplodedLabels({ parts }: { parts: readonly Part[] }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -102,7 +147,10 @@ export default function ExplodedLabels({ parts }: { parts: readonly Part[] }) {
     };
     measure();
 
-    const items: Item[] = parts.map(() => ({ ax: 0, ay: 0, side: 1, ex: 0, ey: 0, y: 0, run: 0, h: 0, on: false }));
+    const items: Item[] = parts.map((_, i) => ({ i, on: false, ax: 0, ay: 0, w: 0, h: 0, slot: 'left', ex: 0, y: 0, side: 1 }));
+    const escaped = new Map<number, 'above' | 'below'>();
+    /** Shift of a column label's target height, steepening a leader that grazes a neighbour's dot. */
+    const bias = new Map<number, number>();
     const state = { draw: reduce ? 1 : 0, alpha: 0 };
     let shown = false;
 
@@ -113,8 +161,8 @@ export default function ExplodedLabels({ parts }: { parts: readonly Part[] }) {
     };
 
     const render = () => {
-      const c = director.screen.deviceCentre;
-      if (state.alpha <= 0.001 || !director.ready || !c) return hide();
+      const scr = director.screen;
+      if (state.alpha <= 0.001 || !director.ready || !scr.deviceCentre) return hide();
       if (!shown) {
         root.style.visibility = 'visible';
         shown = true;
@@ -123,152 +171,220 @@ export default function ExplodedLabels({ parts }: { parts: readonly Part[] }) {
 
       const W = window.innerWidth;
       const H = window.innerHeight;
-      const R = clamp(W * 0.03, 28, 60); // radial run
-      const TAIL = clamp(W * 0.012, 12, 22); // horizontal tail
-      const GAP = 9; // tail end → text
+      const TAIL = clamp(W * 0.012, 12, 22);
       const top = navH + 20;
       const bottom = H - 28;
       const maxRight = W - 24;
       const padY = 18;
 
-      // 1 · Natural placement: run outward from the centre, pick a side, keep inside bounds.
-      for (let i = 0; i < n; i++) {
-        const it = items[i];
-        const a = director.screen[parts[i].anchor];
-        if (!a || !a.visible) {
-          it.on = false;
-          continue;
+      // 1 · Anchors.
+      const on = items.filter((it) => {
+        const a = scr[parts[it.i].anchor];
+        it.on = !!a && a.visible;
+        if (a) {
+          it.ax = a.x;
+          it.ay = a.y;
         }
-        it.on = true;
-        it.ax = a.x;
-        it.ay = a.y;
-        let dx = a.x - c.x;
-        let dy = a.y - c.y;
-        const len = Math.hypot(dx, dy);
-        if (len < 1) {
-          dx = 1;
-          dy = 0;
-        } else {
-          dx /= len;
-          dy /= len;
-        }
-        const w = widths[i];
-        const h = heights[i];
-        const ey0 = a.y + dy * R;
-        const beside = (y: number) => y + h / 2 > keep.t - padY && y - h / 2 < keep.b + padY;
-        /** Elbow x for a label on `side` at height y, or null if it cannot fit there. */
-        const elbowX = (side: 1 | -1, y: number, run = Math.abs(dx) * R): number | null => {
-          let ex = a.x + side * run;
-          if (side < 0) {
-            // Beside the placard, left labels stop short of the column; above or below it they may use it.
-            const minLeft = beside(y) ? keep.r + 28 : Math.max(16, keep.l);
-            if (ex - TAIL - GAP - w < minLeft) {
-              ex = minLeft + w + GAP + TAIL;
-              if (ex > a.x) return null;
-            }
-          } else if (ex + TAIL + GAP + w > maxRight) {
-            ex = maxRight - w - GAP - TAIL;
-            if (ex < a.x) return null;
-          }
-          return ex;
-        };
-        const prefer: 1 | -1 = dx >= 0 ? 1 : -1;
-        let side = prefer;
-        let ey = ey0;
-        let ex = elbowX(side, ey);
-        if (ex === null && prefer < 0 && beside(ey0)) {
-          // Escape vertically: clear of the placard, still on the outward side.
-          const y = ey0 > (keep.t + keep.b) / 2 ? keep.b + padY + h / 2 + 2 : keep.t - padY - h / 2 - 2;
-          if (Math.abs(y - a.y) < H * 0.24) {
-            ey = y;
-            ex = elbowX(side, ey);
-          }
-        }
-        if (ex === null) {
-          // No room on the outward side: turn back inward, but step clear of the part vertically first.
-          side = (-prefer) as 1 | -1;
-          const vy = dy >= 0 ? 1 : -1;
-          ey = a.y + vy * (Math.max(Math.abs(dy), 0.8) * R + h * 0.5);
-          ex = elbowX(side, ey, R * 0.25);
-        }
-        if (ex === null) {
-          side = prefer;
-          ex = a.x + side * Math.abs(dx) * R;
-        }
-        it.side = side;
-        it.ex = ex;
-        it.ey = ey;
-        it.run = TAIL + GAP + w;
-        it.h = h;
-      }
+        it.w = widths[it.i];
+        it.h = heights[it.i];
+        return it.on;
+      });
 
-      // 2 · Per side, stack labels vertically with a minimum spacing.
-      for (const side of [-1, 1] as const) {
-        const col = items.map((it, i) => ({ it, i })).filter((o) => o.it.on && o.it.side === side);
-        col.sort((p, q) => p.it.ey - q.it.ey);
-        for (let k = 0; k < col.length; k++) {
-          const { it, i } = col[k];
-          it.y = clamp(it.ey, top, bottom);
-          if (k > 0) {
-            const prev = col[k - 1];
-            const min = (heights[prev.i] + heights[i]) * 0.5 + 10;
-            it.y = Math.max(it.y, prev.it.y + min);
-          }
-        }
-        for (let k = col.length - 1; k >= 0; k--) {
-          const { it, i } = col[k];
-          if (k === col.length - 1) it.y = Math.min(it.y, bottom);
-          else {
-            const next = col[k + 1];
-            const min = (heights[next.i] + heights[i]) * 0.5 + 10;
-            it.y = Math.min(it.y, next.it.y - min);
-          }
-        }
-        // Stacking may have nudged a column-side label beside the placard: move it clear (above or below).
-        for (let k = 0; side < 0 && k < col.length; k++) {
-          const { it, i } = col[k];
-          const h = heights[i];
-          const left = it.ex - TAIL - GAP - widths[i];
-          if (left >= keep.r + 28) continue;
-          if (it.y + h / 2 <= keep.t - padY || it.y - h / 2 >= keep.b + padY) continue;
-          it.y = it.ey > (keep.t + keep.b) / 2 ? keep.b + padY + h / 2 : keep.t - padY - h / 2;
-          for (let j = k + 1; j < col.length; j++) {
-            const prev = col[j - 1];
-            const min = (heights[prev.i] + heights[col[j].i]) * 0.5 + 10;
-            col[j].it.y = Math.max(col[j].it.y, prev.it.y + min);
-          }
-        }
-        // Neighbouring labels share an elbow line, so a stack reads as one column.
-        for (let k = 0; k < col.length; ) {
-          let j = k;
-          while (j + 1 < col.length && col[j + 1].it.y - col[j].it.y <= 64 && Math.abs(col[j + 1].it.ex - col[j].it.ex) <= 48) j++;
-          if (j > k) {
-            let ex = col[k].it.ex;
-            for (let m = k; m <= j; m++) ex = side > 0 ? Math.max(ex, col[m].it.ex) : Math.min(ex, col[m].it.ex);
-            for (let m = k; m <= j; m++) col[m].it.ex = ex;
-          }
-          k = j + 1;
-        }
-        // Leaders never cross: where two would, both elbows move out to the outer one.
-        for (let pass = 0; pass < 2; pass++) {
-          for (let k = 0; k < col.length; k++) {
-            for (let j = k + 1; j < col.length; j++) {
-              const p = col[k].it;
-              const q = col[j].it;
-              if (!leadersCross(p, q)) continue;
-              const ex = side > 0 ? Math.max(p.ex, q.ex) : Math.min(p.ex, q.ex);
-              p.ex = ex;
-              q.ex = ex;
-            }
-          }
+      // 2 · Device keep-out: the rendered device's screen rect, inflated.
+      const lo = scr.boundsMin;
+      const hi = scr.boundsMax;
+      const dev: Box = { l: Infinity, r: -Infinity, t: Infinity, b: -Infinity };
+      if (lo?.visible && hi?.visible) {
+        dev.l = lo.x;
+        dev.t = lo.y;
+        dev.r = hi.x;
+        dev.b = hi.y;
+      } else {
+        for (const it of on) {
+          dev.l = Math.min(dev.l, it.ax);
+          dev.r = Math.max(dev.r, it.ax);
+          dev.t = Math.min(dev.t, it.ay);
+          dev.b = Math.max(dev.b, it.ay);
         }
       }
+      if (!(dev.l <= dev.r)) {
+        const c = scr.deviceCentre;
+        dev.l = dev.r = c.x;
+        dev.t = dev.b = c.y;
+      }
+      const B: Box = { l: dev.l - KEEP, r: dev.r + KEEP, t: dev.t - KEEP, b: dev.b + KEEP };
+      const cx = (B.l + B.r) / 2;
+      const placard: Box = { l: keep.l, r: keep.r + 28, t: keep.t - padY, b: keep.b + padY };
 
-      // 3 · Write: partial leader (drawn from the dot outward), dot, label.
+      const labelBox = (it: Item, side = it.side, y = it.y): Box => {
+        const l = side > 0 ? it.ex + TAIL + GAP : it.ex - TAIL - GAP - it.w;
+        return { l, r: l + it.w, t: y - it.h / 2, b: y + it.h / 2 };
+      };
+      /** The tail plus label: the band other leaders must not cut. */
+      const band = (it: Item): Box => {
+        const b = labelBox(it);
+        return { l: Math.min(b.l, it.ex) - 2, r: Math.max(b.r, it.ex) + 2, t: b.t - 4, b: b.b + 4 };
+      };
+      const isRow = (it: Item) => it.slot === 'above' || it.slot === 'below';
+      /** Leader start: row leaders drop vertically from the anchor's x. */
+      const startX = (it: Item) => (isRow(it) ? it.ex : it.ax);
+
+      /** Stack a column (sorted by part) as close to its anchors' heights as spacing allows. */
+      const stack = (col: Item[]) => {
+        // Isotonic fit with minimum spacing (pool adjacent violators on height minus offset).
+        const off: number[] = [];
+        let o = 0;
+        col.forEach((it, k) => {
+          if (k) o += (col[k - 1].h + it.h) / 2 + SPACING;
+          off.push(o);
+        });
+        const blocks: { sum: number; n: number }[] = [];
+        col.forEach((it, k) => {
+          blocks.push({ sum: it.ay + (bias.get(it.i) ?? 0) - off[k], n: 1 });
+          while (blocks.length > 1) {
+            const a = blocks[blocks.length - 2];
+            const b = blocks[blocks.length - 1];
+            if (a.sum / a.n <= b.sum / b.n) break;
+            a.sum += b.sum;
+            a.n += b.n;
+            blocks.pop();
+          }
+        });
+        let k = 0;
+        for (const b of blocks) for (let m = 0; m < b.n; m++, k++) col[k].y = b.sum / b.n + off[k];
+        const first = col[0];
+        const last = col[col.length - 1];
+        const down = top + first.h / 2 - first.y;
+        if (down > 0) for (const it of col) it.y += down;
+        const up = last.y - (bottom - last.h / 2);
+        if (up > 0) for (const it of col) it.y -= up;
+      };
+
+      const placeColumn = (side: 1 | -1) => {
+        const col = on.filter((it) => it.slot === (side < 0 ? 'left' : 'right')).sort((p, q) => p.i - q.i);
+        if (!col.length) return;
+        // One shared elbow line: the text edge sits on the keep-out, unless an anchor is closer than MIN_RUN.
+        let X = side < 0 ? B.l + GAP + TAIL : B.r - GAP - TAIL;
+        for (const it of col) X = side < 0 ? Math.min(X, it.ax - MIN_RUN) : Math.max(X, it.ax + MIN_RUN);
+        for (const it of col) {
+          it.ex = X;
+          it.side = side;
+        }
+        stack(col);
+      };
+
+      const placeRow = (slot: 'above' | 'below', columnBoxes: Box[]) => {
+        const row = on.filter((it) => it.slot === slot).sort((p, q) => p.i - q.i);
+        if (!row.length) return;
+        const down = slot === 'below';
+        // Part order top to bottom; the row grows away from the device.
+        const order = down ? row : [...row].reverse();
+        let edge = down ? B.b : B.t;
+        for (const it of order) {
+          it.ex = Math.round(it.ax) + 0.5;
+          let y = edge + (down ? 1 : -1) * (it.h / 2);
+          // Each label clears the leaders that drop past it (to labels further out) and the placard.
+          const passing = row.filter((o) => (down ? o.i > it.i : o.i < it.i)).map((o) => o.ax);
+          const outward: 1 | -1 = it.ax < cx ? -1 : 1;
+          const fits = (side: 1 | -1) => {
+            const b = labelBox(it, side, y);
+            return b.l >= 16 && b.r <= maxRight && !overlaps(b, placard) && !passing.some((x) => x > b.l - 6 && x < b.r + 6);
+          };
+          it.side = fits(outward) || !fits((-outward) as 1 | -1) ? outward : ((-outward) as 1 | -1);
+          // Step further out past any column label in the way.
+          for (let guard = 0; guard < columnBoxes.length; guard++) {
+            const hit = columnBoxes.find((b) => overlaps(labelBox(it, it.side, y), b, 4));
+            if (!hit) break;
+            y = down ? hit.b + 4 + SPACING / 2 + it.h / 2 : hit.t - 4 - SPACING / 2 - it.h / 2;
+          }
+          it.y = y;
+          edge = y + (down ? 1 : -1) * (it.h / 2 + SPACING);
+        }
+      };
+
+      const place = () => {
+        for (const it of on) it.slot = escaped.get(it.i) ?? (it.ax < cx ? 'left' : 'right');
+        placeColumn(-1);
+        placeColumn(1);
+        const columnBoxes = on.filter((it) => !isRow(it)).map((it) => labelBox(it));
+        placeRow('below', columnBoxes);
+        placeRow('above', columnBoxes);
+      };
+
+      /**
+       * How two callouts interfere: 'cross' = their leaders cross, or one cuts
+       * the other's tail or label; otherwise the callout whose leader grazes
+       * the other's dot, or null when clean.
+       */
+      const clash = (p: Item, q: Item): 'cross' | Item | null => {
+        const px = startX(p);
+        const qx = startX(q);
+        if (segmentsCross(px, p.ay, p.ex, p.y, qx, q.ay, q.ex, q.y)) return 'cross';
+        if (segmentHitsRect(qx, q.ay, q.ex, q.y, band(p)) || segmentHitsRect(px, p.ay, p.ex, p.y, band(q))) return 'cross';
+        if (overlaps(labelBox(p), labelBox(q), 4)) return 'cross';
+        if (distToSegment(q.ax, q.ay, px, p.ay, p.ex, p.y) < DOT_CLEAR) return p;
+        if (distToSegment(p.ax, p.ay, qx, q.ay, q.ex, q.y) < DOT_CLEAR) return q;
+        return null;
+      };
+
+      /** The next fix: open up a column (spread) or send a callout to a row (escape). */
+      const nextFix = (): { spread?: Item; dir?: number; escape?: Item } | null => {
+        for (const it of on) {
+          if (isRow(it)) continue;
+          const b = labelBox(it);
+          if (overlaps(b, B)) return { escape: it };
+          // Beside the placard left labels stop short of it; above or below it they may use the column.
+          if (b.r > maxRight || b.l < Math.max(16, keep.l) || overlaps(b, placard)) return { escape: it };
+        }
+        for (let a = 0; a < on.length; a++) {
+          for (let b = a + 1; b < on.length; b++) {
+            const p = on[a];
+            const q = on[b];
+            if (isRow(p) && isRow(q)) continue;
+            const k = clash(p, q);
+            if (!k) continue;
+            if (isRow(p)) return { escape: q };
+            if (isRow(q)) return { escape: p };
+            // Same column, a leader only grazing a neighbour's dot: steepen it, away from that neighbour.
+            if (k !== 'cross' && p.slot === q.slot && Math.abs(bias.get(k.i) ?? 0) < MAX_SPREAD) {
+              const other = k === p ? q : p;
+              return { spread: k, dir: k.i < other.i ? -1 : 1 };
+            }
+            // The one nearer the top or bottom of the device has the shorter way out.
+            const edge = (it: Item) => Math.min(it.ay - B.t, B.b - it.ay);
+            return { escape: edge(p) <= edge(q) ? p : q };
+          }
+        }
+        return null;
+      };
+
+      const escapeTo = (it: Item): 'above' | 'below' => {
+        const rowHeight = (slot: 'above' | 'below') =>
+          on.reduce((sum, o) => sum + (escaped.get(o.i) === slot ? o.h + SPACING : 0), it.h + SPACING);
+        const below = B.b - it.ay <= it.ay - B.t;
+        const roomBelow = bottom - B.b >= rowHeight('below');
+        const roomAbove = B.t - top >= rowHeight('above');
+        if (below) return roomBelow || !roomAbove ? 'below' : 'above';
+        return roomAbove || !roomBelow ? 'above' : 'below';
+      };
+
+      // 3 · Columns first; whatever cannot stand cleanly in its column moves to a row.
+      escaped.clear();
+      bias.clear();
+      place();
+      for (let pass = 0; pass < n * 12; pass++) {
+        const fix = nextFix();
+        if (!fix) break;
+        if (fix.spread) bias.set(fix.spread.i, (bias.get(fix.spread.i) ?? 0) + (fix.dir ?? 1) * SPREAD_STEP);
+        if (fix.escape) escaped.set(fix.escape.i, escapeTo(fix.escape));
+        place();
+      }
+
+      // 4 · Write: partial leader (drawn from the dot outward), dot, label.
       const stagger = 0.07;
       const span = 1 - stagger * (n - 1);
-      for (let i = 0; i < n; i++) {
-        const it = items[i];
+      for (const it of items) {
+        const i = it.i;
         const path = leaders[i];
         const dot = dots[i];
         const label = labels[i];
@@ -280,14 +396,14 @@ export default function ExplodedLabels({ parts }: { parts: readonly Part[] }) {
         }
         const t = clamp((state.draw - i * stagger) / span, 0, 1);
         const y = Math.round(it.y) + 0.5;
-        const tx = it.ex + it.side * TAIL;
-        const l1 = Math.hypot(it.ex - it.ax, y - it.ay);
+        const sx = startX(it);
+        const l1 = Math.hypot(it.ex - sx, y - it.ay);
         const l2 = TAIL;
         const reach = easeOut(t) * (l1 + l2);
-        let d = `M${it.ax.toFixed(1)} ${it.ay.toFixed(1)}`;
+        let d = `M${sx.toFixed(1)} ${it.ay.toFixed(1)}`;
         if (reach <= l1) {
           const k = l1 > 0 ? reach / l1 : 1;
-          d += `L${(it.ax + (it.ex - it.ax) * k).toFixed(1)} ${(it.ay + (y - it.ay) * k).toFixed(1)}`;
+          d += `L${(sx + (it.ex - sx) * k).toFixed(1)} ${(it.ay + (y - it.ay) * k).toFixed(1)}`;
         } else {
           d += `L${it.ex.toFixed(1)} ${y}L${(it.ex + it.side * (reach - l1)).toFixed(1)} ${y}`;
         }
@@ -295,12 +411,12 @@ export default function ExplodedLabels({ parts }: { parts: readonly Part[] }) {
         dot.setAttribute('cx', it.ax.toFixed(1));
         dot.setAttribute('cy', it.ay.toFixed(1));
         dot.style.opacity = clamp(t / 0.15, 0, 1).toFixed(3);
-        const lx = it.side > 0 ? tx + GAP : tx - GAP - widths[i];
-        const ly = it.y - heights[i] * 0.5;
+        const box = labelBox(it);
         const la = clamp((t - 0.55) / 0.45, 0, 1);
         label.style.opacity = la.toFixed(3);
-        label.style.transform = `translate3d(${(lx + (1 - la) * it.side * -6).toFixed(1)}px, ${ly.toFixed(1)}px, 0)`;
+        label.style.transform = `translate3d(${(box.l + (1 - la) * it.side * -6).toFixed(1)}px, ${box.t.toFixed(1)}px, 0)`;
         label.dataset.side = it.side > 0 ? 'right' : 'left';
+        label.dataset.slot = it.slot;
       }
     };
 

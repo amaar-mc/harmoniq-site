@@ -85,6 +85,17 @@ export default function Nav() {
     };
   }, [open, close]);
 
+  // While the full-screen sheet is open, the page behind it is out of reach for
+  // assistive tech and pointer alike (matching what is on screen).
+  useEffect(() => {
+    if (!open) return;
+    const behind = [document.getElementById('main'), document.querySelector('body > footer')].filter(
+      (el): el is HTMLElement => !!el,
+    );
+    behind.forEach((el) => el.setAttribute('inert', ''));
+    return () => behind.forEach((el) => el.removeAttribute('inert'));
+  }, [open]);
+
   // Keep keyboard focus inside the bar + sheet while the sheet is open.
   const onKeyDown = (e: ReactKeyboardEvent<HTMLElement>) => {
     if (!open) return;

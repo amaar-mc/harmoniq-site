@@ -4,8 +4,17 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
+}
+
+/* Start state (the design timeline reveals it). The labels are projected from
+   the 3D device by script, so without JS there is nothing to point at. */
+:global(html.js) .overlay {
   visibility: hidden;
   opacity: 0;
+}
+
+:global(html:not(.js)) .overlay {
+  display: none;
 }
 
 .svg {
@@ -45,13 +54,8 @@
   letter-spacing: 0.02em;
   color: var(--fg);
   white-space: nowrap;
-  text-shadow: 0 0 14px rgba(18, 18, 19, 0.55);
   opacity: 0;
   will-change: transform, opacity;
-}
-
-.label[data-side='left'] {
-  flex-direction: row-reverse;
 }
 
 .index {

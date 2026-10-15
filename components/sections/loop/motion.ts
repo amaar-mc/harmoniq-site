@@ -38,6 +38,7 @@ const X = 0.012;
 
 const CHAMPAGNE = '#CDB89A';
 const STONE_DARK = '#A9A59E';
+const PAPER = '#F2F0EC';
 
 /** Inverse of power1.inOut, so stations appear exactly as the drawing passes them. */
 const invQuadInOut = (y: number) => (y < 0.5 ? Math.sqrt(y / 2) : 1 - Math.sqrt((1 - y) / 2));
@@ -66,6 +67,9 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
   const rings = all('ring');
   const labels = all('label');
   const idxs = all('idx');
+  // Station state reads by colour, never by dimming (AA on graphite): titles and
+  // indices rest at stone-dark (CSS); the active station's title is paper, its index champagne.
+  const titles = all('ltitle');
   const demo = one('demo');
 
   const isMobile = mobile || (reduce && window.matchMedia('(max-width: 767px)').matches);
@@ -90,9 +94,9 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
     gsap.set(light, { autoAlpha: 0 });
     gsap.set(trail, { opacity: 0 });
     gsap.set([...lits, ...rings], { opacity: 0 });
-    gsap.set(labels, { opacity: 0.42 });
+    gsap.set(labels, { opacity: 1 });
     gsap.set(panels, { opacity: 0 });
-    if (demo) gsap.set(demo, { autoAlpha: 0 });
+    if (demo) gsap.set(demo, { opacity: 0, pointerEvents: 'none' });
     gsap.set(line, {
       xPercent: -50,
       yPercent: -50,
@@ -110,17 +114,24 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
     if (isMobile) tl.to(head, { opacity: 0, duration: X }, N[0][0] - X);
     N.forEach(([a, b], i) => {
       tl.to([lits[i], rings[i]], { opacity: 1, duration: X }, a - X / 2);
-      tl.to(labels[i], { opacity: 1, duration: X }, a - X / 2);
+      tl.to(titles[i], { color: PAPER, duration: X }, a - X / 2);
+      tl.to(idxs[i], { color: CHAMPAGNE, duration: X }, a - X / 2);
       tl.to(panels[i], { opacity: 1, duration: X }, a);
       if (i < N.length - 1) {
         tl.to(rings[i], { opacity: 0, duration: X }, b - X / 2);
-        tl.to(labels[i], { opacity: 0.74, duration: X }, b - X / 2);
+        tl.to(titles[i], { color: STONE_DARK, duration: X }, b - X / 2);
+        tl.to(idxs[i], { color: STONE_DARK, duration: X }, b - X / 2);
         tl.to(panels[i], { opacity: 0, duration: X }, b - X);
       }
     });
     if (demo) {
-      tl.to(demo, { autoAlpha: 1, duration: X }, N[3][0]);
-      tl.to(demo, { autoAlpha: 0, duration: X }, N[3][1] - X);
+      // Opacity only (never visibility): the button stays in the tab order; pointer
+      // events follow what is shown, as scrubbed sets (a pure function of scroll).
+      const [a, b] = N[3];
+      tl.to(demo, { opacity: 1, duration: X }, a);
+      tl.set(demo, { pointerEvents: 'auto' }, a);
+      tl.to(demo, { opacity: 0, duration: X }, b - X);
+      tl.set(demo, { pointerEvents: 'none' }, b - X);
     }
     tl.to(trail, { opacity: 1, duration: X }, N[4][0]);
     tl.to([head, column, diagram], { opacity: 0, duration: 0.03 }, h0);
@@ -156,7 +167,7 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
     borderRadius: pillH / 2,
     autoAlpha: 0,
   });
-  if (demo) gsap.set(demo, { autoAlpha: 0 });
+  if (demo) gsap.set(demo, { opacity: 0, pointerEvents: 'none' });
 
   // Intro: headline, the stadium drawing itself, stations appearing as it passes.
   tl.to(eyebrow, { opacity: 1, y: 0, duration: 0.05, ease: 'power2.out' }, 0);
@@ -172,7 +183,7 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
   for (let k = 0; k < NODE_COUNT; k++) {
     const t = DRAW[0] + (DRAW[1] - DRAW[0]) * invQuadInOut(k / NODE_COUNT);
     tl.to(dots[k], { scale: 1, opacity: 1, duration: 0.012, ease: 'back.out(2.2)' }, t);
-    tl.to(labels[k], { opacity: 0.42, duration: 0.018 }, t + 0.004);
+    tl.to(labels[k], { opacity: 1, duration: 0.018 }, t + 0.004);
   }
   tl.to(light, { autoAlpha: 1, scale: 1, duration: 0.018, ease: 'power2.out' }, 0.1);
 
@@ -184,13 +195,13 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
     const on = a - 0.004;
     tl.to(lits[i], { opacity: 1, scale: 1, duration: 0.012, ease: 'power2.out' }, on);
     tl.to(rings[i], { opacity: 1, scale: 1, duration: 0.016, ease: 'power2.out' }, on);
-    tl.to(labels[i], { opacity: 1, duration: 0.012 }, on);
+    tl.to(titles[i], { color: PAPER, duration: 0.012 }, on);
     tl.to(idxs[i], { color: CHAMPAGNE, duration: 0.012 }, on);
     tl.to(panels[i], { opacity: 1, y: 0, duration: 0.016, ease: 'power2.out' }, a);
 
     if (i < N.length - 1) {
       tl.to(rings[i], { opacity: 0, scale: 1.3, duration: 0.012, ease: 'power1.in' }, b - 0.004);
-      tl.to(labels[i], { opacity: 0.74, duration: 0.012 }, b - 0.004);
+      tl.to(titles[i], { color: STONE_DARK, duration: 0.012 }, b - 0.004);
       tl.to(idxs[i], { color: STONE_DARK, duration: 0.012 }, b - 0.004);
       tl.to(panels[i], { opacity: 0, y: -10, duration: X, ease: 'power2.in' }, b - X);
     }
@@ -243,7 +254,8 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
     });
   }
 
-  // 04 Deliver: the 40 Hz line slides calmly with scroll; the demo is reachable only here.
+  // 04 Deliver: the 40 Hz line slides calmly with scroll; the demo shows (and takes
+  // pointer input) only here. It stays focusable throughout: HearDemo scrolls here on focus.
   {
     const [a, b] = N[3];
     const wave = one('wave');
@@ -257,8 +269,10 @@ export function buildLoopMotion({ root, mobile, reduce }: SceneMotionContext) {
       tl.fromTo(wave, { x: 0 }, { x: -WAVE.lambda * WAVE.extra, duration: b - a + 0.024, ease: 'none' }, a - 0.012);
     }
     if (demo) {
-      tl.to(demo, { autoAlpha: 1, duration: X }, a + 0.004);
-      tl.to(demo, { autoAlpha: 0, duration: X * 0.8 }, b - X);
+      tl.to(demo, { opacity: 1, duration: X }, a + 0.004);
+      tl.set(demo, { pointerEvents: 'auto' }, a + 0.004);
+      tl.to(demo, { opacity: 0, duration: X * 0.8 }, b - X);
+      tl.set(demo, { pointerEvents: 'none' }, b - X);
     }
   }
 

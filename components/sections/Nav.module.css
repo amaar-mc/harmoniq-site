@@ -14,6 +14,11 @@
     transform 0.7s var(--ease-out);
 }
 
+/* Without JS the bar never learns the page tone: it scrolls away with the top of the page (on paper). */
+:global(html:not(.js)) .header {
+  position: absolute;
+}
+
 :global(html[data-bg-tone='dark']) .header {
   --nav-fg: var(--paper);
   --nav-fg-2: var(--stone-dark);
@@ -274,6 +279,13 @@
     text-decoration-thickness: 1px;
     text-underline-offset: 0.18em;
     text-decoration-color: var(--champagne);
+  }
+}
+
+/* Without JS the menu button cannot open the sheet: leave the wordmark and Follow. */
+@media (max-width: 767px) {
+  :global(html:not(.js)) .menuButton {
+    display: none;
   }
 }
 

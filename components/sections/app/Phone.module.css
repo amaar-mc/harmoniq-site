@@ -772,3 +772,23 @@
     scale: 0.88;
   }
 }
+
+/* Without JS there is no pan: on a phone the three screens stack, each whole. */
+@media (max-width: 767px) {
+  :global(html:not(.js)) .stage {
+    --pw-mid: min(66cqw, 270px);
+    --pw: var(--pw-mid);
+    position: relative;
+    top: auto;
+    height: auto;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--cap) + 44px);
+    padding-bottom: var(--cap);
+  }
+
+  :global(html:not(.js)) .left,
+  :global(html:not(.js)) .right {
+    scale: none;
+  }
+}

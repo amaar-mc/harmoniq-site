@@ -11,6 +11,13 @@ import Phones from './app/Phones';
 import styles from './AppSection.module.css';
 
 /**
+ * Mobile hold (scene progress): the row brings 01 into focus, then 03. The
+ * reduced-motion branch crossfades over the same ranges instead of panning.
+ */
+const HOLD_TO_01: [number, number] = [0.58, 0.68];
+const HOLD_TO_03: [number, number] = [0.76, 0.92];
+
+/**
  * Masked lines rise in, one tween per line (a single staggered fromTo only
  * primes the first line's start state in a scrubbed timeline, so later lines
  * would show before their reveal).
@@ -83,6 +90,30 @@ export default function AppSection() {
       fade(eyebrow, 0, 0.1);
       fade(title, RANGE.text[0], 0.1);
       fade(sub, RANGE.text[0] + 0.05, 0.1);
+
+      if (stage && window.matchMedia('(max-width: 767px)').matches) {
+        // Hold (mobile): the same screens take the focus in turn (02 → 01 → 03), without
+        // travel. Over each pan's range the row fades out, its offset and focus jump at the
+        // midpoint (zero-length, so a pure function of scroll), and it fades back in.
+        const step = () => mid.offsetLeft - left.offsetLeft;
+        const swap = (
+          [a, b]: [number, number],
+          x: [() => number, () => number],
+          focus: HTMLElement,
+          blur: HTMLElement,
+        ) => {
+          const m = (a + b) / 2;
+          const half = (b - a) / 2;
+          const jump = { duration: 0, immediateRender: false };
+          tl.fromTo(stage, { opacity: 1 }, { opacity: 0, duration: half, ease: 'power1.in', immediateRender: false }, at(a));
+          tl.fromTo(stage, { x: x[0] }, { x: x[1], ...jump }, at(m));
+          tl.fromTo(blur, { scale: 1 }, { scale: 0.88, ...jump }, at(m));
+          tl.fromTo(focus, { scale: 0.88 }, { scale: 1, ...jump }, at(m));
+          tl.fromTo(stage, { opacity: 0 }, { opacity: 1, duration: half, ease: 'power1.out', immediateRender: false }, at(m));
+        };
+        swap(HOLD_TO_01, [() => 0, () => step()], left, mid);
+        swap(HOLD_TO_03, [() => step(), () => -step()], right, left);
+      }
       return () => handoff.kill();
     }
 
@@ -113,14 +144,14 @@ export default function AppSection() {
       // Hold (mobile): pan the row so each screen takes the focus in turn,
       // 02 (where the light landed) → 01 → 03, easing into a still moment each time.
       const step = () => mid.offsetLeft - left.offsetLeft;
-      const io = { duration: 0.1, ease: 'power2.inOut' };
-      const across = { duration: 0.16, ease: 'power2.inOut', immediateRender: false };
-      tl.fromTo(stage, { x: 0 }, { x: () => step(), ...io }, at(0.58));
-      tl.fromTo(mid, { scale: 1 }, { scale: 0.88, ...io }, at(0.58));
-      tl.fromTo(left, { scale: 0.88 }, { scale: 1, ...io }, at(0.58));
-      tl.fromTo(stage, { x: () => step() }, { x: () => -step(), ...across }, at(0.76));
-      tl.fromTo(left, { scale: 1 }, { scale: 0.88, ...across }, at(0.76));
-      tl.fromTo(right, { scale: 0.88 }, { scale: 1, ...across, immediateRender: true }, at(0.76));
+      const io = { duration: HOLD_TO_01[1] - HOLD_TO_01[0], ease: 'power2.inOut' };
+      const across = { duration: HOLD_TO_03[1] - HOLD_TO_03[0], ease: 'power2.inOut', immediateRender: false };
+      tl.fromTo(stage, { x: 0 }, { x: () => step(), ...io }, at(HOLD_TO_01[0]));
+      tl.fromTo(mid, { scale: 1 }, { scale: 0.88, ...io }, at(HOLD_TO_01[0]));
+      tl.fromTo(left, { scale: 0.88 }, { scale: 1, ...io }, at(HOLD_TO_01[0]));
+      tl.fromTo(stage, { x: () => step() }, { x: () => -step(), ...across }, at(HOLD_TO_03[0]));
+      tl.fromTo(left, { scale: 1 }, { scale: 0.88, ...across }, at(HOLD_TO_03[0]));
+      tl.fromTo(right, { scale: 0.88 }, { scale: 1, ...across, immediateRender: true }, at(HOLD_TO_03[0]));
       return () => handoff.kill();
     }
 

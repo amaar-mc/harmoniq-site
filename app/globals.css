@@ -174,6 +174,8 @@ canvas {
 
 .skip-link:focus-visible {
   transform: none;
+  /* Champagne reads on paper and on charcoal alike (the skip link sits outside any toned section). */
+  outline-color: var(--champagne);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -392,12 +394,128 @@ canvas {
   [data-scene='close'] { --len: 2.4; }
 }
 
-/* Without JavaScript nothing paints the scroll-driven background: give the
-   dark sections their own ground so their text stays readable. */
+/* -------------------------------------------------------------------------- */
+/* Without JavaScript                                                         */
+/* Nothing pins, scrubs or paints the stage: the scenes simply flow, every    */
+/* reveal's start state is scoped to html.js (in each module), and the        */
+/* sections carry their own ground and tokens.                                */
+/* -------------------------------------------------------------------------- */
+
+html:not(.js) .scene {
+  height: auto;
+}
+
+html:not(.js) .scene__frame {
+  position: relative;
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+}
+
+/* The stage (device, intro hairline) is decorative and needs script to draw. */
+html:not(.js) .stage {
+  display: none;
+}
+
+/* In its place, the pre-rendered stills (the no-WebGL fallback's) sit behind
+   the first screen of the scenes composed around the device. They were shot at
+   desktop (16:10) and phone (9:19.5) proportions: other shapes go without. */
+@media (min-width: 768px) and (min-aspect-ratio: 5/4) {
+  html:not(.js) [data-scene='hero'] {
+    --still: url('/stills/desktop-hero.webp');
+  }
+
+  html:not(.js) [data-scene='reveal'] {
+    --still: url('/stills/desktop-reveal.webp');
+  }
+
+  html:not(.js) [data-scene='loop'] {
+    --still: url('/stills/desktop-loop.webp');
+  }
+
+  html:not(.js) [data-scene='close'] {
+    --still: url('/stills/desktop-close.webp');
+  }
+}
+
+@media (max-width: 767px) and (max-aspect-ratio: 3/4) {
+  html:not(.js) [data-scene='hero'] {
+    --still: url('/stills/mobile-hero.webp');
+  }
+
+  html:not(.js) [data-scene='reveal'] {
+    --still: url('/stills/mobile-reveal.webp');
+  }
+
+  html:not(.js) [data-scene='loop'] {
+    --still: url('/stills/mobile-loop.webp');
+  }
+
+  html:not(.js) [data-scene='close'] {
+    --still: url('/stills/mobile-close.webp');
+  }
+}
+
+html:not(.js) :is([data-scene='hero'], [data-scene='reveal'], [data-scene='loop'], [data-scene='close']) > .scene__frame {
+  isolation: isolate;
+}
+
+html:not(.js) :is([data-scene='hero'], [data-scene='reveal'], [data-scene='loop'], [data-scene='close']) > .scene__frame::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: 100svh;
+  background: var(--still, none) 50% 50% / cover no-repeat;
+  /* Melt the still's own ground into the section's at its lower edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  pointer-events: none;
+}
+
+/* Design story on a phone: the device (its band of the still) heads the placards. */
+@media (max-width: 767px) {
+  html:not(.js) [data-scene='design'] > .scene__frame::before {
+    content: '';
+    display: block;
+    height: calc(var(--nav-h) + 16px + 56vw);
+    background: url('/stills/mobile-halo.webp') 50% calc(var(--nav-h) + 16px - 52vw) / 100% auto no-repeat;
+    pointer-events: none;
+  }
+}
+
+/* Desktop design story: the device holds (sticky) beside the stacked placards. */
+@media (min-width: 768px) {
+  html:not(.js) [data-scene='design'] > .scene__frame::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 100svh;
+    margin-bottom: -100svh;
+    /* A little smaller than the frame and to the right, clear of the placards
+       (the still's ground is the page's paper, so its edges never show). */
+    background: url('/stills/desktop-halo.webp') 100% 50% / 86% auto no-repeat;
+    pointer-events: none;
+  }
+}
+
+/* Nothing paints the scroll-driven background: the dark sections bring their
+   own ground, and --page-bg follows it (so .loop-btn labels stay readable). */
 html:not(.js) [data-scene='loop'] {
+  --page-bg: var(--graphite);
   background: var(--graphite);
 }
 
 html:not(.js) [data-scene='close'] {
+  --page-bg: var(--charcoal);
   background: var(--charcoal);
+}
+
+/* The design story stays on paper, so its graphite placards keep paper tones. */
+html:not(.js) [data-scene='design'] [data-tone='dark'] {
+  --fg: var(--ink);
+  --fg-2: var(--stone-text);
+  --hair: rgba(139, 135, 129, 0.55);
+  --focus: var(--ink);
 }

@@ -13,8 +13,17 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  opacity: 0;
   pointer-events: none;
+}
+
+/* Start state (the design timeline fades it in). Without JS there is no
+   progress to show: the placards are simply stacked. */
+:global(html.js) .rail {
+  opacity: 0;
+}
+
+:global(html:not(.js)) .rail {
+  display: none;
 }
 
 .tick {

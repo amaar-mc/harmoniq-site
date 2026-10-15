@@ -61,7 +61,9 @@ export default function LoopDiagram() {
               <span className={s.labelIdx} data-l="idx">
                 {node.index}
               </span>
-              <span className={s.labelTitle}>{node.title}</span>
+              <span className={s.labelTitle} data-l="ltitle">
+                {node.title}
+              </span>
             </span>
           </div>
         );

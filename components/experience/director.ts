@@ -66,7 +66,10 @@ export const director = {
   current: null as Pose | null,
   /** Page background (hex), scroll-driven. */
   bg: '#F2F0EC',
-  /** Projected anchors, keyed by model anchor name (exploded offsets included). Also `deviceCentre`. */
+  /**
+   * Projected anchors, keyed by model anchor name (exploded offsets included). Also `deviceCentre`,
+   * and `boundsMin` / `boundsMax`: the top-left and bottom-right corners of the device's screen rect.
+   */
   screen: {} as Record<string, ScreenPoint>,
   /** Model is built, shaders compiled, on stage. */
   ready: false,

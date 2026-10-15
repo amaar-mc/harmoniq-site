@@ -28,6 +28,18 @@ export const DESIGN_BEATS: {
   },
 };
 
+/**
+ * The room darkens (paper → graphite) during the camera's turn from the crown
+ * to the inside view, so the change reads as part of the move.
+ */
+export const DESIGN_TONE: { desktop: Range; mobile: Range } = {
+  desktop: [0.334, 0.4],
+  mobile: [0.23, 0.31],
+};
+
+/** Fraction of the contacts beat at which the camera has arrived inside the band (copy waits for it). */
+export const CONTACTS_ARRIVE = 0.3;
+
 /** Within the layers beat: explode, hold (labels shown), reassemble. */
 export const LAYERS = {
   explode: [0.0, 0.35] as Range, // fraction of the layers beat

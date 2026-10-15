@@ -129,10 +129,11 @@
   align-items: baseline;
   gap: 14px;
   margin-top: 36px;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.55;
   color: var(--fg-2);
   max-width: 40ch;
+  text-wrap: balance;
 }
 
 .asideMark {

@@ -46,11 +46,10 @@
 
 .mission {
   margin-top: clamp(10px, 1.6svh, 16px);
-  font-size: 14px;
+  font-size: 17px;
   line-height: 1.5;
-  letter-spacing: 0.005em;
   color: var(--fg-2);
-  max-width: 62ch;
+  max-width: 40ch;
   text-wrap: balance;
 }
 
@@ -82,8 +81,7 @@
   }
 
   .mission {
-    font-size: 13px;
-    max-width: 34ch;
+    max-width: 30ch;
   }
 
   .cta {
