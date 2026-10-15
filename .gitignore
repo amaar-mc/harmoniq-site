@@ -42,3 +42,6 @@ next-env.d.ts
 
 # lab scratch renders
 /screenshots/lab/cand*/
+
+# Section preview routes used during the build (removed before release)
+/app/dev/
